@@ -1,3 +1,21 @@
 docs/
 PROJECT_TRACKER.md
 CLAUDE.md
+
+# secrets
+.env
+.env.local
+
+# Next.js frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Python backend
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.venv/
+backend/*.egg-info/
+
+# session data (local practice transcripts — personal, not for git)
+sessions/
