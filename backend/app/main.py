@@ -1,9 +1,19 @@
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
-from app import config
+from app import config, voice
 
-app = FastAPI(title="DryRunAI backend")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await voice.start_runner()
+    yield
+    await voice.stop_runner()
+
+
+app = FastAPI(title="DryRunAI backend", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,3 +37,9 @@ def config_status():
         "anthropic_api_key_set": bool(config.ANTHROPIC_API_KEY),
         "groq_model": config.GROQ_MODEL,
     }
+
+
+@app.websocket("/ws/voice")
+async def voice_websocket(websocket: WebSocket):
+    await websocket.accept()
+    await voice.handle_voice_websocket(websocket)

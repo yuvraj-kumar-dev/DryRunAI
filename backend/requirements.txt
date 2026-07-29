@@ -3,3 +3,6 @@ uvicorn[standard]
 python-dotenv
 groq
 websockets
+sounddevice
+numpy
+pipecat-ai
