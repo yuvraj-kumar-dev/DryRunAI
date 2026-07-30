@@ -129,3 +129,7 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
         await worker.cancel()
 
     await runner.add_workers(worker)
+    # add_workers() starts the worker in the background and returns immediately -- without
+    # waiting here, this route handler (and the @app.websocket function above it) returns right
+    # away, and Starlette closes the WebSocket out from under the still-running pipeline.
+    await worker.wait()
