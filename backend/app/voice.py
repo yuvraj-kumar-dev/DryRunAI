@@ -99,26 +99,40 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
     query_params = websocket.query_params
     session_id = query_params.get("session_id") or str(uuid.uuid4())
 
-    pending = PENDING_SESSIONS.pop(session_id, None)
-    if pending is not None:
-        # Normal flow: frontend already called POST /api/sessions, so the problem shown on
-        # screen and the problem the voice pipeline discusses are guaranteed to match.
-        persona = pending["persona"]
-        initial_problem = pending["problem"]
+    # Check for an already-active session with this id FIRST, before consuming PENDING_SESSIONS.
+    # PENDING_SESSIONS.pop() is a one-time read -- without this check, a second connection for
+    # the same session_id (React Strict Mode double-invoking the connect effect in dev, or a
+    # real page reload reusing the session_id cached in sessionStorage) would find it already
+    # consumed and silently fall back to a brand new random problem, desyncing from whatever the
+    # frontend still has displayed. Reusing everything from the existing session (shallow-copied
+    # into a fresh dict, not the same object, so two concurrent worker closures don't share
+    # mutable state) keeps any reconnect consistent instead of randomly diverging.
+    existing = ACTIVE_SESSIONS.get(session_id)
+    if existing is not None:
+        persona = existing["persona"]
+        initial_problem = existing["current_problem"]
+        session = {**existing, "llm_error_timestamps": []}
     else:
-        # Fallback for direct/manual connections (e.g. quick testing) that skip the REST call.
-        persona = query_params.get("persona") if query_params.get("persona") in interview.PERSONAS else "neutral"
-        initial_problem = _pick_initial_problem(query_params.get("topic"), query_params.get("difficulty"))
-    session = {
-        "session_id": session_id,
-        "persona": persona,
-        "initial_problem_id": initial_problem["id"],
-        "current_problem": initial_problem,
-        "escalated": False,
-        "latest_code": "",
-        "code_snapshots": [],
-        "llm_error_timestamps": [],
-    }
+        pending = PENDING_SESSIONS.pop(session_id, None)
+        if pending is not None:
+            # Normal flow: frontend already called POST /api/sessions, so the problem shown on
+            # screen and the problem the voice pipeline discusses are guaranteed to match.
+            persona = pending["persona"]
+            initial_problem = pending["problem"]
+        else:
+            # Fallback for direct/manual connections (e.g. quick testing) that skip the REST call.
+            persona = query_params.get("persona") if query_params.get("persona") in interview.PERSONAS else "neutral"
+            initial_problem = _pick_initial_problem(query_params.get("topic"), query_params.get("difficulty"))
+        session = {
+            "session_id": session_id,
+            "persona": persona,
+            "initial_problem_id": initial_problem["id"],
+            "current_problem": initial_problem,
+            "escalated": False,
+            "latest_code": "",
+            "code_snapshots": [],
+            "llm_error_timestamps": [],
+        }
     ACTIVE_SESSIONS[session_id] = session
 
     transport = FastAPIWebsocketTransport(

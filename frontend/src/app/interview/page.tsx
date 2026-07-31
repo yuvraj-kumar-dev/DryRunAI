@@ -47,8 +47,18 @@ export default function InterviewPage() {
   }, [router]);
 
   // Connect voice once we know which session to join.
+  //
+  // React Strict Mode (default for the App Router since Next.js 13.5.1, and we don't override
+  // it) deliberately double-invokes effects in dev: mount -> cleanup -> mount again. Without the
+  // `cancelled` guard below, the first (soon-to-be-torn-down) invocation's async connect() could
+  // still complete and reach the backend before cleanup takes effect -- and since
+  // PENDING_SESSIONS.pop() server-side is a one-time read, a second real connection for the same
+  // session_id would find it already consumed and silently fall back to a random new problem,
+  // while the screen keeps showing the original one. Checking `cancelled` at every await boundary
+  // ensures a torn-down effect invocation never actually calls connect().
   useEffect(() => {
     if (!sessionId) return;
+    let cancelled = false;
 
     const client = new PipecatClient({
       transport: new WebSocketTransport({ serializer: new ProtobufFrameSerializer() }),
@@ -74,10 +84,13 @@ export default function InterviewPage() {
 
     (async () => {
       await client.initDevices();
+      if (cancelled) return;
       await client.connect({ wsUrl: `${WS_URL}?session_id=${sessionId}` });
+      if (cancelled) await client.disconnect();
     })().catch(() => setStatus("error"));
 
     return () => {
+      cancelled = true;
       client.disconnect();
     };
   }, [sessionId]);
