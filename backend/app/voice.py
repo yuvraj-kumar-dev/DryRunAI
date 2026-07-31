@@ -71,7 +71,7 @@ def _pick_initial_problem(topic: str | None, difficulty: str | None) -> dict:
     return problems.select_problem(topic, difficulty)
 
 
-def _persist_session(session: dict, transcript: list[dict], scorecard: dict | None) -> None:
+def _write_session_file(session: dict, transcript: list[dict], scorecard: dict | None) -> None:
     config.SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
     path = config.SESSIONS_DIR / f"{time.strftime('%Y%m%dT%H%M%S')}-{session['session_id']}.json"
     with open(path, "w", encoding="utf-8") as f:
@@ -261,5 +261,9 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
         )
     except Exception:
         logger.exception("Scorecard generation failed -- session will still be saved without it")
-    _persist_session(session, transcript, scorecard)
+    # This app runs one shared event loop across every concurrent session (see start_runner
+    # above) -- a synchronous file write here would briefly stall every *other* active session's
+    # real-time audio/LLM/TTS processing too, not just this one. asyncio.to_thread keeps it off
+    # the loop.
+    await asyncio.to_thread(_write_session_file, session, transcript, scorecard)
     ACTIVE_SESSIONS.pop(session_id, None)
