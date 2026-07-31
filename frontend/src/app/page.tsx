@@ -1,65 +1,142 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+
+type SessionOptions = {
+  topics: string[];
+  difficulties: string[];
+  personas: string[];
+};
+
+const PERSONA_LABELS: Record<string, string> = {
+  neutral: "Neutral & realistic",
+  strict: "Strict & high-bar",
+};
 
 export default function Home() {
+  const router = useRouter();
+  const [options, setOptions] = useState<SessionOptions | null>(null);
+  const [topic, setTopic] = useState("");
+  const [difficulty, setDifficulty] = useState("");
+  const [persona, setPersona] = useState("");
+  const [starting, setStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/api/session-options`)
+      .then((res) => res.json())
+      .then((data: SessionOptions) => {
+        setOptions(data);
+        setTopic(data.topics[0]);
+        setDifficulty(data.difficulties[0]);
+        setPersona(data.personas[0]);
+      })
+      .catch(() => setError("Couldn't reach the backend. Is it running on :8000?"));
+  }, []);
+
+  async function startInterview() {
+    setStarting(true);
+    setError(null);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic, difficulty, persona }),
+      });
+      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+      const data = await res.json();
+      sessionStorage.setItem(
+        "dryrunai_session",
+        JSON.stringify({ sessionId: data.session_id, problem: data.problem, persona })
+      );
+      router.push("/interview");
+    } catch (err) {
+      setError(`Failed to start session: ${err}`);
+      setStarting(false);
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-[#0a0a0f] p-10 text-[#e5e5ea]">
+      <div className="text-center">
+        <h1 className="bg-gradient-to-r from-indigo-400 to-cyan-300 bg-clip-text text-4xl font-semibold text-transparent">
+          DryRunAI
+        </h1>
+        <p className="mt-2 text-sm text-[#8b8b96]">A practice DSA technical interview, out loud.</p>
+      </div>
+
+      {error && (
+        <div className="max-w-md rounded-lg border border-red-900 bg-red-950/40 px-4 py-3 text-sm text-red-300">
+          {error}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      )}
+
+      {!options ? (
+        <p className="text-[#8b8b96]">Loading options...</p>
+      ) : (
+        <div className="flex w-full max-w-sm flex-col gap-6 rounded-xl border border-white/10 bg-[#13131a] p-6">
+          <Picker label="Category" value={topic} options={options.topics} onChange={setTopic} />
+          <Picker
+            label="Difficulty"
+            value={difficulty}
+            options={options.difficulties}
+            onChange={setDifficulty}
+          />
+          <Picker
+            label="Interviewer style"
+            value={persona}
+            options={options.personas}
+            labels={PERSONA_LABELS}
+            onChange={setPersona}
+          />
+
+          <button
+            onClick={startInterview}
+            disabled={starting}
+            className="mt-2 rounded-lg bg-gradient-to-r from-indigo-500 to-cyan-400 px-5 py-3 font-medium text-[#0a0a0f] disabled:opacity-40"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            {starting ? "Starting..." : "Start Interview"}
+          </button>
         </div>
-      </main>
+      )}
+    </div>
+  );
+}
+
+function Picker({
+  label,
+  value,
+  options,
+  labels,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  labels?: Record<string, string>;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="text-xs uppercase tracking-wide text-[#8b8b96]">{label}</label>
+      <div className="flex flex-wrap gap-2">
+        {options.map((opt) => (
+          <button
+            key={opt}
+            onClick={() => onChange(opt)}
+            className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
+              value === opt
+                ? "border-transparent bg-gradient-to-r from-indigo-500 to-cyan-400 text-[#0a0a0f]"
+                : "border-white/15 text-[#e5e5ea] hover:border-white/30"
+            }`}
+          >
+            {labels?.[opt] ?? opt}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
