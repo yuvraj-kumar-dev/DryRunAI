@@ -1,0 +1,2270 @@
+{
+  "metadata": {
+    "title": "DSA Interview Question Bank v0",
+    "generated_on": "2026-07-31",
+    "total_problems": 50,
+    "counts_by_topic": {
+      "Array": 18,
+      "String": 16,
+      "Linked List": 16
+    },
+    "counts_by_difficulty": {
+      "Easy": 15,
+      "Medium": 25,
+      "Hard": 10
+    },
+    "topics": [
+      "Array",
+      "String",
+      "Linked List"
+    ],
+    "difficulty_order": [
+      "Easy",
+      "Medium",
+      "Hard"
+    ],
+    "escalation_note": "Escalation (harder follow-up problem after a strong solve) is selection logic, not data: pick another problem with the same topic and the next entry in difficulty_order, excluding the current problem id. follow_up_questions is a separate, unrelated concept -- depth-probing prompts about the *current* problem (e.g. 'what if the array is sorted?'), not a link to another problem.",
+    "sourcing_methodology": "Problem selection uses Striver's A2Z Sheet as the topic/pattern skeleton for Arrays, Strings, and Linked Lists, cross-validated against NeetCode 150 and Blind 75 for interview relevance. All problem_statement, constraints, examples, and hints text is written originally for this platform -- none of it is copied from LeetCode, GeeksforGeeks, or any other source. source_reference and prep_sheets_seen_on fields are attribution pointers only (platform + canonical problem name), intended for linking out to further practice, not for embedding external content.",
+    "schema_notes": {
+      "patterns": "Algorithmic technique tags, useful for filtering/spaced-repetition.",
+      "optimal_complexity": "Time/space complexity of the expected optimal solution.",
+      "follow_up_questions": "Suggested prompts for an AI interviewer to ask after a correct solution, to probe depth.",
+      "prep_sheets_seen_on": "Well-known public curricula this problem is commonly associated with, for cross-reference only."
+    }
+  },
+  "problems": [
+    {
+      "id": "arr-e-01",
+      "title": "Two Sum",
+      "topic": "Array",
+      "difficulty": "Easy",
+      "patterns": [
+        "hash-map",
+        "one-pass"
+      ],
+      "problem_statement": "Given an array of integers and a target value, return the indices of the two numbers that add up to the target. Assume exactly one valid pair exists, and the same element cannot be used twice.",
+      "constraints": [
+        "2 <= n <= 10^4",
+        "Array may contain negative numbers and duplicates",
+        "Exactly one valid answer exists"
+      ],
+      "examples": [
+        {
+          "input": "nums = [2,7,11,15], target = 9",
+          "output": "[0,1]",
+          "explanation": "nums[0] + nums[1] = 2 + 7 = 9"
+        },
+        {
+          "input": "nums = [3,2,4], target = 6",
+          "output": "[1,2]",
+          "explanation": "nums[1] + nums[2] = 2 + 4 = 6"
+        }
+      ],
+      "hints": [
+        "Brute force checks every pair in O(n^2) -- can you avoid the nested loop?",
+        "As you scan, store each value's index in a hash map so you can check for its complement in O(1)."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(n)"
+      },
+      "follow_up_questions": [
+        "What if the array is sorted -- can you do it with O(1) extra space?",
+        "How would you handle multiple valid pairs and return all of them?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Two Sum"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "arr-e-02",
+      "title": "Best Time to Buy and Sell Stock",
+      "topic": "Array",
+      "difficulty": "Easy",
+      "patterns": [
+        "greedy",
+        "one-pass"
+      ],
+      "problem_statement": "Given an array where each element is a stock's price on a given day, find the maximum profit from a single buy followed by a single sell (buy must occur before sell). Return 0 if no profit is possible.",
+      "constraints": [
+        "1 <= n <= 10^5",
+        "0 <= price <= 10^4"
+      ],
+      "examples": [
+        {
+          "input": "prices = [7,1,5,3,6,4]",
+          "output": "5",
+          "explanation": "Buy at 1, sell at 6, profit = 5"
+        },
+        {
+          "input": "prices = [7,6,4,3,1]",
+          "output": "0",
+          "explanation": "Prices only fall, so no profit is possible"
+        }
+      ],
+      "hints": [
+        "Track the minimum price seen so far as you scan left to right.",
+        "At each day, the best possible profit if sold today is price[i] - min_so_far."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How does this change if you're allowed multiple transactions?",
+        "What if a cooldown period is required after selling?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Best Time to Buy and Sell Stock"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "arr-e-03",
+      "title": "Contains Duplicate",
+      "topic": "Array",
+      "difficulty": "Easy",
+      "patterns": [
+        "hash-set"
+      ],
+      "problem_statement": "Given an integer array, determine whether any value appears at least twice.",
+      "constraints": [
+        "1 <= n <= 10^5"
+      ],
+      "examples": [
+        {
+          "input": "[1,2,3,1]",
+          "output": "true",
+          "explanation": "1 appears twice"
+        },
+        {
+          "input": "[1,2,3,4]",
+          "output": "false",
+          "explanation": "all values are unique"
+        }
+      ],
+      "hints": [
+        "Sorting lets you check adjacent elements, but costs O(n log n).",
+        "A hash set gives O(n) time at the cost of O(n) space."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(n)"
+      },
+      "follow_up_questions": [
+        "How would you solve this with O(1) extra space if the input is sorted?",
+        "How would you find duplicates within a sliding window of size k?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Contains Duplicate"
+      },
+      "prep_sheets_seen_on": [
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "arr-e-04",
+      "title": "Move Zeroes",
+      "topic": "Array",
+      "difficulty": "Easy",
+      "patterns": [
+        "two-pointer",
+        "in-place"
+      ],
+      "problem_statement": "Given an integer array, move all zeroes to the end while maintaining the relative order of the non-zero elements, in-place, without allocating a copy of the array.",
+      "constraints": [
+        "1 <= n <= 10^4"
+      ],
+      "examples": [
+        {
+          "input": "[0,1,0,3,12]",
+          "output": "[1,3,12,0,0]"
+        },
+        {
+          "input": "[0,0,1]",
+          "output": "[1,0,0]"
+        }
+      ],
+      "hints": [
+        "Use a slow pointer marking where the next non-zero element should go.",
+        "Swap instead of overwrite so you don't need a second pass to fill zeroes."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "Can you minimize the total number of writes/swaps?",
+        "What if you needed to move all zeroes to the front instead?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Move Zeroes"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150"
+      ]
+    },
+    {
+      "id": "arr-e-05",
+      "title": "Majority Element",
+      "topic": "Array",
+      "difficulty": "Easy",
+      "patterns": [
+        "boyer-moore-voting"
+      ],
+      "problem_statement": "Given an array of size n, find the element that appears more than n/2 times. You may assume such an element always exists.",
+      "constraints": [
+        "1 <= n <= 5*10^4"
+      ],
+      "examples": [
+        {
+          "input": "[3,2,3]",
+          "output": "3"
+        },
+        {
+          "input": "[2,2,1,1,1,2,2]",
+          "output": "2"
+        }
+      ],
+      "hints": [
+        "A hash map of counts works but uses O(n) space -- can you do O(1) space?",
+        "Boyer-Moore voting: maintain a candidate and a counter; the majority element survives the cancellations."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would you solve it if no guaranteed majority exists (find elements appearing > n/3 times)?",
+        "How would you adapt this for a streaming input where you can't revisit earlier elements?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Majority Element"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150"
+      ]
+    },
+    {
+      "id": "arr-m-01",
+      "title": "Maximum Subarray (Kadane's Algorithm)",
+      "topic": "Array",
+      "difficulty": "Medium",
+      "patterns": [
+        "dynamic-programming",
+        "kadane"
+      ],
+      "problem_statement": "Given an integer array that may include negative numbers, find the contiguous subarray with the largest sum and return that sum.",
+      "constraints": [
+        "1 <= n <= 10^5",
+        "-10^4 <= nums[i] <= 10^4"
+      ],
+      "examples": [
+        {
+          "input": "[-2,1,-3,4,-1,2,1,-5,4]",
+          "output": "6",
+          "explanation": "The subarray [4,-1,2,1] sums to 6"
+        },
+        {
+          "input": "[1]",
+          "output": "1"
+        }
+      ],
+      "hints": [
+        "At each index, decide whether to extend the previous subarray or start fresh here.",
+        "Track a running sum and a global maximum as you go."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would you also return the actual subarray, not just the sum?",
+        "How would you extend this to a 2D matrix (maximum-sum submatrix)?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Maximum Subarray"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "arr-m-02",
+      "title": "Product of Array Except Self",
+      "topic": "Array",
+      "difficulty": "Medium",
+      "patterns": [
+        "prefix-suffix-product"
+      ],
+      "problem_statement": "Given an integer array, return an array where each element is the product of all other elements except itself, without using division and in O(n) time.",
+      "constraints": [
+        "2 <= n <= 10^5",
+        "product of any prefix/suffix fits a 32-bit integer"
+      ],
+      "examples": [
+        {
+          "input": "[1,2,3,4]",
+          "output": "[24,12,8,6]"
+        },
+        {
+          "input": "[-1,1,0,-3,3]",
+          "output": "[0,0,9,0,0]"
+        }
+      ],
+      "hints": [
+        "Compute prefix products in one pass and suffix products in another, then multiply.",
+        "For O(1) extra space (excluding output), fold the suffix pass directly into the output array."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1) extra excluding output"
+      },
+      "follow_up_questions": [
+        "How does the approach change if division were allowed but zeroes could appear?",
+        "How would you handle this as a streaming problem where the array grows?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Product of Array Except Self"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "arr-m-03",
+      "title": "3Sum",
+      "topic": "Array",
+      "difficulty": "Medium",
+      "patterns": [
+        "two-pointer",
+        "sorting"
+      ],
+      "problem_statement": "Given an integer array, find all unique triplets that sum to zero. The solution set must not contain duplicate triplets.",
+      "constraints": [
+        "3 <= n <= 3000"
+      ],
+      "examples": [
+        {
+          "input": "[-1,0,1,2,-1,-4]",
+          "output": "[[-1,-1,2],[-1,0,1]]"
+        },
+        {
+          "input": "[0,1,1]",
+          "output": "[]"
+        }
+      ],
+      "hints": [
+        "Sort the array first -- this makes duplicate-skipping and two-pointer scanning straightforward.",
+        "Fix one element, then use two pointers on the remaining sorted subarray to find pairs summing to its negation."
+      ],
+      "optimal_complexity": {
+        "time": "O(n^2)",
+        "space": "O(1) extra excluding output"
+      },
+      "follow_up_questions": [
+        "How would you extend this to 4Sum or general k-Sum?",
+        "How would you count triplets close to a target rather than exactly equal to it?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "3Sum"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "arr-m-04",
+      "title": "Sort Colors (Dutch National Flag)",
+      "topic": "Array",
+      "difficulty": "Medium",
+      "patterns": [
+        "three-pointer",
+        "in-place-partition"
+      ],
+      "problem_statement": "Given an array containing only the values 0, 1, and 2, sort it in-place in a single pass without using a library sort.",
+      "constraints": [
+        "1 <= n <= 300"
+      ],
+      "examples": [
+        {
+          "input": "[2,0,2,1,1,0]",
+          "output": "[0,0,1,1,2,2]"
+        },
+        {
+          "input": "[2,0,1]",
+          "output": "[0,1,2]"
+        }
+      ],
+      "hints": [
+        "Maintain three pointers -- low, mid, and high -- partitioning the array as you scan.",
+        "When you swap the high pointer's element in, don't advance mid yet -- the swapped-in value still needs checking."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would this generalize to k distinct values instead of just 3?",
+        "How is this related to the quicksort partitioning scheme?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Sort Colors"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150"
+      ]
+    },
+    {
+      "id": "arr-m-05",
+      "title": "Next Permutation",
+      "topic": "Array",
+      "difficulty": "Medium",
+      "patterns": [
+        "array-manipulation"
+      ],
+      "problem_statement": "Given an array of integers representing a permutation, rearrange it in-place into the next lexicographically greater permutation. If none exists, rearrange it into the lowest possible order (sorted ascending).",
+      "constraints": [
+        "1 <= n <= 100"
+      ],
+      "examples": [
+        {
+          "input": "[1,2,3]",
+          "output": "[1,3,2]"
+        },
+        {
+          "input": "[3,2,1]",
+          "output": "[1,2,3]"
+        }
+      ],
+      "hints": [
+        "Scan from the right to find the first index where the sequence stops decreasing.",
+        "Swap that element with the smallest element to its right that's still larger than it, then reverse the suffix."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would you find the previous permutation instead?",
+        "How would you find the k-th permutation directly without generating all of them?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Next Permutation"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z"
+      ]
+    },
+    {
+      "id": "arr-m-06",
+      "title": "Rotate Array",
+      "topic": "Array",
+      "difficulty": "Medium",
+      "patterns": [
+        "array-reversal",
+        "in-place"
+      ],
+      "problem_statement": "Given an array, rotate it to the right by k steps, in-place, using O(1) extra space.",
+      "constraints": [
+        "1 <= n <= 10^5",
+        "0 <= k <= 10^5"
+      ],
+      "examples": [
+        {
+          "input": "nums=[1,2,3,4,5,6,7], k=3",
+          "output": "[5,6,7,1,2,3,4]"
+        },
+        {
+          "input": "nums=[-1,-100,3,99], k=2",
+          "output": "[3,99,-1,-100]"
+        }
+      ],
+      "hints": [
+        "Reduce k modulo n first, since rotating by n is a no-op.",
+        "Three reversals -- the whole array, then each of the two segments -- rotate it in-place in O(n)."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would you rotate left instead of right?",
+        "How does the reversal trick generalize to rotating a singly linked list?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Rotate Array"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150"
+      ]
+    },
+    {
+      "id": "arr-m-07",
+      "title": "Subarray Sum Equals K",
+      "topic": "Array",
+      "difficulty": "Medium",
+      "patterns": [
+        "prefix-sum",
+        "hash-map"
+      ],
+      "problem_statement": "Given an integer array and an integer k, return the total number of contiguous subarrays whose sum equals k.",
+      "constraints": [
+        "1 <= n <= 2*10^4",
+        "array can contain negative numbers"
+      ],
+      "examples": [
+        {
+          "input": "nums=[1,1,1], k=2",
+          "output": "2"
+        },
+        {
+          "input": "nums=[1,2,3], k=3",
+          "output": "2"
+        }
+      ],
+      "hints": [
+        "Maintain a running prefix sum and a hash map counting how many times each prefix sum has occurred.",
+        "At each index, the number of valid subarrays ending here equals how many times (prefix_sum - k) has been seen before."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(n)"
+      },
+      "follow_up_questions": [
+        "If the array only contained non-negative numbers, would a sliding window work instead?",
+        "How would you find the longest subarray summing to k instead of counting them?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Subarray Sum Equals K"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150"
+      ]
+    },
+    {
+      "id": "arr-m-08",
+      "title": "Merge Intervals",
+      "topic": "Array",
+      "difficulty": "Medium",
+      "patterns": [
+        "sorting",
+        "interval-merging"
+      ],
+      "problem_statement": "Given a collection of intervals, merge all overlapping intervals and return the resulting non-overlapping set.",
+      "constraints": [
+        "1 <= n <= 10^4",
+        "intervals given as [start, end] with start <= end"
+      ],
+      "examples": [
+        {
+          "input": "[[1,3],[2,6],[8,10],[15,18]]",
+          "output": "[[1,6],[8,10],[15,18]]"
+        },
+        {
+          "input": "[[1,4],[4,5]]",
+          "output": "[[1,5]]"
+        }
+      ],
+      "hints": [
+        "Sort the intervals by start time first -- this makes overlaps trivial to detect in one pass.",
+        "Two intervals overlap when the next interval's start is <= the current merged interval's end."
+      ],
+      "optimal_complexity": {
+        "time": "O(n log n)",
+        "space": "O(n)"
+      },
+      "follow_up_questions": [
+        "How would you insert a new interval into an already-sorted, non-overlapping list efficiently?",
+        "How would you find the minimum number of intervals to remove to make the rest non-overlapping?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Merge Intervals"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "arr-m-09",
+      "title": "Set Matrix Zeroes",
+      "topic": "Array",
+      "difficulty": "Medium",
+      "patterns": [
+        "in-place-matrix-manipulation"
+      ],
+      "problem_statement": "Given an m x n matrix, if an element is 0, set its entire row and column to 0. Do this in-place using O(1) extra space.",
+      "constraints": [
+        "1 <= m, n <= 200"
+      ],
+      "examples": [
+        {
+          "input": "[[1,1,1],[1,0,1],[1,1,1]]",
+          "output": "[[1,0,1],[0,0,0],[1,0,1]]"
+        },
+        {
+          "input": "[[0,1,2,0],[3,4,5,2],[1,3,1,5]]",
+          "output": "[[0,0,0,0],[0,4,5,0],[0,3,1,0]]"
+        }
+      ],
+      "hints": [
+        "A naive approach marks zero positions in a separate set -- this uses O(m+n) space; can you do better?",
+        "Use the first row and first column of the matrix itself as markers, handling the top-left cell's dual role carefully."
+      ],
+      "optimal_complexity": {
+        "time": "O(mn)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "Why does the first-row/first-column marker trick need an extra flag for the top-left cell?",
+        "How would this change for a sparse matrix representation?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Set Matrix Zeroes"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150"
+      ]
+    },
+    {
+      "id": "arr-h-01",
+      "title": "Trapping Rain Water",
+      "topic": "Array",
+      "difficulty": "Hard",
+      "patterns": [
+        "two-pointer",
+        "prefix-max"
+      ],
+      "problem_statement": "Given an array representing an elevation map where each bar has width 1, compute how much rainwater it can trap after raining.",
+      "constraints": [
+        "1 <= n <= 2*10^4",
+        "0 <= height[i] <= 10^5"
+      ],
+      "examples": [
+        {
+          "input": "[0,1,0,2,1,0,1,3,2,1,2,1]",
+          "output": "6"
+        },
+        {
+          "input": "[4,2,0,3,2,5]",
+          "output": "9"
+        }
+      ],
+      "hints": [
+        "Water trapped at index i is bounded by min(max height to its left, max height to its right) minus height[i].",
+        "Two pointers from both ends, tracking a running left-max and right-max, avoid needing precomputed arrays."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would you solve the 2D version (Trapping Rain Water II) with a heap?",
+        "How does the two-pointer approach avoid needing the full left-max/right-max arrays?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Trapping Rain Water"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "arr-h-02",
+      "title": "First Missing Positive",
+      "topic": "Array",
+      "difficulty": "Hard",
+      "patterns": [
+        "in-place-hashing",
+        "cyclic-sort"
+      ],
+      "problem_statement": "Given an unsorted integer array, find the smallest missing positive integer, using O(n) time and O(1) extra space.",
+      "constraints": [
+        "1 <= n <= 5*10^5"
+      ],
+      "examples": [
+        {
+          "input": "[1,2,0]",
+          "output": "3"
+        },
+        {
+          "input": "[3,4,-1,1]",
+          "output": "2"
+        },
+        {
+          "input": "[7,8,9,11,12]",
+          "output": "1"
+        }
+      ],
+      "hints": [
+        "The answer must lie between 1 and n+1, so values outside that range never matter.",
+        "Use the array itself as a hash table: place each value v at index v-1 by swapping, then scan for the first index that doesn't hold its expected value."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would this change if the array could contain duplicates of very large magnitude?",
+        "Can you find the k-th missing positive with a similar technique?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "First Missing Positive"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "arr-h-03",
+      "title": "Median of Two Sorted Arrays",
+      "topic": "Array",
+      "difficulty": "Hard",
+      "patterns": [
+        "binary-search",
+        "partitioning"
+      ],
+      "problem_statement": "Given two sorted arrays of possibly different sizes, find the median of the combined array in O(log(min(m,n))) time.",
+      "constraints": [
+        "0 <= m, n <= 1000",
+        "at least one array is non-empty"
+      ],
+      "examples": [
+        {
+          "input": "nums1=[1,3], nums2=[2]",
+          "output": "2.0"
+        },
+        {
+          "input": "nums1=[1,2], nums2=[3,4]",
+          "output": "2.5"
+        }
+      ],
+      "hints": [
+        "Merging both arrays and taking the middle works but is O(m+n) -- think about binary searching for the correct partition point instead.",
+        "Binary search on the smaller array for a partition such that every element on the left side is <= every element on the right side across both arrays."
+      ],
+      "optimal_complexity": {
+        "time": "O(log(min(m,n)))",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would you generalize this to finding the median of k sorted arrays?",
+        "What breaks if you binary search on the larger array instead of the smaller one?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Median of Two Sorted Arrays"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "arr-h-04",
+      "title": "Sliding Window Maximum",
+      "topic": "Array",
+      "difficulty": "Hard",
+      "patterns": [
+        "monotonic-deque"
+      ],
+      "problem_statement": "Given an array and a window size k, return the maximum value in each sliding window as it moves from the left of the array to the right.",
+      "constraints": [
+        "1 <= n <= 10^5",
+        "1 <= k <= n"
+      ],
+      "examples": [
+        {
+          "input": "nums=[1,3,-1,-3,5,3,6,7], k=3",
+          "output": "[3,3,5,5,6,7]"
+        },
+        {
+          "input": "nums=[1], k=1",
+          "output": "[1]"
+        }
+      ],
+      "hints": [
+        "A brute-force scan of every window is O(nk) -- can a data structure maintain the max incrementally?",
+        "Use a monotonic decreasing deque of indices: pop smaller elements from the back before pushing, and pop from the front once indices fall outside the window."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(k)"
+      },
+      "follow_up_questions": [
+        "How would you adapt this to track the sliding window minimum instead?",
+        "How would you support this over a live stream where k can change dynamically?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Sliding Window Maximum"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150"
+      ]
+    },
+    {
+      "id": "str-e-01",
+      "title": "Valid Anagram",
+      "topic": "String",
+      "difficulty": "Easy",
+      "patterns": [
+        "hash-map",
+        "frequency-count"
+      ],
+      "problem_statement": "Given two strings, determine whether the second is an anagram of the first (uses exactly the same characters with the same frequency, possibly reordered).",
+      "constraints": [
+        "1 <= length <= 5*10^4",
+        "lowercase English letters"
+      ],
+      "examples": [
+        {
+          "input": "s='anagram', t='nagaram'",
+          "output": "true"
+        },
+        {
+          "input": "s='rat', t='car'",
+          "output": "false"
+        }
+      ],
+      "hints": [
+        "Sorting both strings and comparing works but costs O(n log n) -- a frequency count is O(n).",
+        "A single array of 26 counters is enough; increment for s and decrement for t, then check all zeros."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1) for a fixed alphabet"
+      },
+      "follow_up_questions": [
+        "How would you handle Unicode characters instead of just lowercase English letters?",
+        "How would you check if one string is an anagram of any substring of another?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Valid Anagram"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150"
+      ]
+    },
+    {
+      "id": "str-e-02",
+      "title": "Valid Palindrome",
+      "topic": "String",
+      "difficulty": "Easy",
+      "patterns": [
+        "two-pointer"
+      ],
+      "problem_statement": "Given a string, determine if it's a palindrome after converting all uppercase letters to lowercase and removing all non-alphanumeric characters.",
+      "constraints": [
+        "1 <= length <= 2*10^5"
+      ],
+      "examples": [
+        {
+          "input": "'A man, a plan, a canal: Panama'",
+          "output": "true"
+        },
+        {
+          "input": "'race a car'",
+          "output": "false"
+        }
+      ],
+      "hints": [
+        "Two pointers starting from both ends can skip non-alphanumeric characters as they move inward.",
+        "Compare characters case-insensitively without building a separate cleaned string, to save space."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would you solve it if you're allowed to delete at most one character (Valid Palindrome II)?",
+        "How would you find the longest palindromic substring instead of validating the whole string?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Valid Palindrome"
+      },
+      "prep_sheets_seen_on": [
+        "NeetCode 150",
+        "Striver A2Z"
+      ]
+    },
+    {
+      "id": "str-e-03",
+      "title": "Reverse String",
+      "topic": "String",
+      "difficulty": "Easy",
+      "patterns": [
+        "two-pointer",
+        "in-place"
+      ],
+      "problem_statement": "Given an array of characters representing a string, reverse it in-place using O(1) extra space.",
+      "constraints": [
+        "1 <= length <= 10^5"
+      ],
+      "examples": [
+        {
+          "input": "['h','e','l','l','o']",
+          "output": "['o','l','l','e','h']"
+        },
+        {
+          "input": "['H','a','n','n','a','h']",
+          "output": "['h','a','n','n','a','H']"
+        }
+      ],
+      "hints": [
+        "Two pointers at opposite ends, swapping and moving inward, do this in a single pass.",
+        "No auxiliary array is needed since the swap can happen directly in the given array."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would you reverse only the vowels in a string, keeping other characters fixed?",
+        "How would you reverse words in a sentence while keeping each word's letters in order?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Reverse String"
+      },
+      "prep_sheets_seen_on": [
+        "NeetCode 150"
+      ]
+    },
+    {
+      "id": "str-e-04",
+      "title": "Find the Index of the First Occurrence in a String",
+      "topic": "String",
+      "difficulty": "Easy",
+      "patterns": [
+        "string-matching"
+      ],
+      "problem_statement": "Given a haystack string and a needle string, return the index of the first occurrence of needle in haystack, or -1 if needle does not occur.",
+      "constraints": [
+        "0 <= haystack.length, needle.length <= 5*10^4"
+      ],
+      "examples": [
+        {
+          "input": "haystack='sadbutsad', needle='sad'",
+          "output": "0"
+        },
+        {
+          "input": "haystack='leetcode', needle='leeto'",
+          "output": "-1"
+        }
+      ],
+      "hints": [
+        "A brute-force check at every starting position is O(nm) -- acceptable for small inputs, but think about a faster approach.",
+        "KMP or Rabin-Karp reduce this to O(n+m) by avoiding redundant re-comparisons."
+      ],
+      "optimal_complexity": {
+        "time": "O(n+m) with KMP",
+        "space": "O(m)"
+      },
+      "follow_up_questions": [
+        "Can you explain how the KMP failure function avoids re-scanning characters?",
+        "How would Rabin-Karp's rolling hash approach compare in the presence of hash collisions?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Find the Index of the First Occurrence in a String"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z"
+      ]
+    },
+    {
+      "id": "str-e-05",
+      "title": "Longest Common Prefix",
+      "topic": "String",
+      "difficulty": "Easy",
+      "patterns": [
+        "string-comparison"
+      ],
+      "problem_statement": "Given an array of strings, find the longest common prefix shared by all of them. Return an empty string if there is no common prefix.",
+      "constraints": [
+        "1 <= n <= 200"
+      ],
+      "examples": [
+        {
+          "input": "['flower','flow','flight']",
+          "output": "'fl'"
+        },
+        {
+          "input": "['dog','racecar','car']",
+          "output": "''"
+        }
+      ],
+      "hints": [
+        "Compare characters column by column across all strings, stopping at the first mismatch.",
+        "Alternatively, sort the array -- the common prefix of the whole array equals the common prefix of just the first and last strings after sorting."
+      ],
+      "optimal_complexity": {
+        "time": "O(S) total characters",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would you find the longest common suffix instead?",
+        "How would this scale if the strings were stored across a distributed system?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Longest Common Prefix"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150"
+      ]
+    },
+    {
+      "id": "str-m-01",
+      "title": "Longest Substring Without Repeating Characters",
+      "topic": "String",
+      "difficulty": "Medium",
+      "patterns": [
+        "sliding-window",
+        "hash-set"
+      ],
+      "problem_statement": "Given a string, find the length of the longest substring that contains no repeating characters.",
+      "constraints": [
+        "0 <= length <= 5*10^4"
+      ],
+      "examples": [
+        {
+          "input": "'abcabcbb'",
+          "output": "3",
+          "explanation": "'abc' is the longest substring without repetition"
+        },
+        {
+          "input": "'bbbbb'",
+          "output": "1"
+        }
+      ],
+      "hints": [
+        "A sliding window with a set can track the current window's unique characters; shrink from the left when a duplicate appears.",
+        "A hash map storing each character's last seen index lets you jump the left boundary directly instead of shrinking one step at a time."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(min(n, alphabet size))"
+      },
+      "follow_up_questions": [
+        "How would you modify this to allow at most k repeating characters?",
+        "How would you return the actual substring rather than just its length?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Longest Substring Without Repeating Characters"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "str-m-02",
+      "title": "Group Anagrams",
+      "topic": "String",
+      "difficulty": "Medium",
+      "patterns": [
+        "hash-map",
+        "sorting"
+      ],
+      "problem_statement": "Given an array of strings, group the anagrams together. The order of groups, and of strings within a group, does not matter.",
+      "constraints": [
+        "1 <= n <= 10^4"
+      ],
+      "examples": [
+        {
+          "input": "['eat','tea','tan','ate','nat','bat']",
+          "output": "[['eat','tea','ate'],['tan','nat'],['bat']]"
+        }
+      ],
+      "hints": [
+        "Two strings are anagrams exactly when their sorted characters (or character-frequency signature) match.",
+        "Use the sorted string (or a frequency-count tuple) as a hash map key, grouping all strings that share it."
+      ],
+      "optimal_complexity": {
+        "time": "O(n * k log k)",
+        "space": "O(n * k)"
+      },
+      "follow_up_questions": [
+        "How would using a frequency-count key instead of a sorted-string key change the time complexity?",
+        "How would you group near-anagrams that differ by exactly one character?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Group Anagrams"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "str-m-03",
+      "title": "Longest Palindromic Substring",
+      "topic": "String",
+      "difficulty": "Medium",
+      "patterns": [
+        "expand-around-center",
+        "dynamic-programming"
+      ],
+      "problem_statement": "Given a string, find the longest substring that is a palindrome.",
+      "constraints": [
+        "1 <= length <= 1000"
+      ],
+      "examples": [
+        {
+          "input": "'babad'",
+          "output": "'bab'",
+          "explanation": "'aba' is also a valid answer"
+        },
+        {
+          "input": "'cbbd'",
+          "output": "'bb'"
+        }
+      ],
+      "hints": [
+        "Every palindrome expands outward from a center -- a single character (odd length) or between two characters (even length).",
+        "Expanding around each of the 2n-1 possible centers gives O(n^2) time with O(1) space, avoiding the O(n^2) space of a full DP table."
+      ],
+      "optimal_complexity": {
+        "time": "O(n^2)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How does Manacher's algorithm achieve O(n) time for this problem?",
+        "How would you count all palindromic substrings instead of finding just the longest?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Longest Palindromic Substring"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "str-m-04",
+      "title": "String to Integer (atoi)",
+      "topic": "String",
+      "difficulty": "Medium",
+      "patterns": [
+        "string-parsing",
+        "edge-cases"
+      ],
+      "problem_statement": "Implement a function that converts a string to a 32-bit signed integer, similar to C's atoi. Handle leading whitespace, an optional sign, digits up to the first non-digit character, and clamp to the 32-bit signed range on overflow.",
+      "constraints": [
+        "0 <= length <= 200"
+      ],
+      "examples": [
+        {
+          "input": "'   -42'",
+          "output": "-42"
+        },
+        {
+          "input": "'4193 with words'",
+          "output": "4193"
+        },
+        {
+          "input": "'words and 987'",
+          "output": "0"
+        }
+      ],
+      "hints": [
+        "Work through the edge cases methodically: leading whitespace, an optional +/- sign, then consecutive digits, stopping at the first non-digit.",
+        "Check for overflow before it happens -- compare against INT_MAX/10 before multiplying, rather than after overflowing."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "What's the risk of checking for overflow after the multiplication instead of before?",
+        "How would you adapt this to parse floating point numbers instead?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "String to Integer (atoi)"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z"
+      ]
+    },
+    {
+      "id": "str-m-05",
+      "title": "Zigzag Conversion",
+      "topic": "String",
+      "difficulty": "Medium",
+      "patterns": [
+        "simulation",
+        "pattern-recognition"
+      ],
+      "problem_statement": "Given a string and a number of rows, write the string in a zigzag pattern across that many rows (top to bottom, then diagonally up, repeating), then read it off row by row and return the result.",
+      "constraints": [
+        "1 <= length <= 1000",
+        "1 <= numRows <= 1000"
+      ],
+      "examples": [
+        {
+          "input": "s='PAYPALISHIRING', numRows=3",
+          "output": "'PAHNAPLSIIGYIR'"
+        },
+        {
+          "input": "s='PAYPALISHIRING', numRows=4",
+          "output": "'PINALSIGYAHRPI'"
+        }
+      ],
+      "hints": [
+        "Simulate directly: maintain one string per row, and step a 'current row' pointer down then up as you place each character.",
+        "The direction flips exactly at row 0 and at row numRows-1."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(n)"
+      },
+      "follow_up_questions": [
+        "Can you derive a direct index formula instead of simulating row by row?",
+        "How would the pattern change for a zigzag with a different diagonal step size?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Zigzag Conversion"
+      },
+      "prep_sheets_seen_on": [
+        "NeetCode extension list"
+      ]
+    },
+    {
+      "id": "str-m-06",
+      "title": "Decode Ways",
+      "topic": "String",
+      "difficulty": "Medium",
+      "patterns": [
+        "dynamic-programming"
+      ],
+      "problem_statement": "Given a string of digits (an encoding where 'A'=1 through 'Z'=26), count the number of ways it can be decoded back into letters.",
+      "constraints": [
+        "1 <= length <= 100"
+      ],
+      "examples": [
+        {
+          "input": "'12'",
+          "output": "2",
+          "explanation": "Can decode as 'AB' (1,2) or 'L' (12)"
+        },
+        {
+          "input": "'226'",
+          "output": "3",
+          "explanation": "'BZ' (2,26), 'VF' (22,6), 'BBF' (2,2,6)"
+        }
+      ],
+      "hints": [
+        "Think of it like climbing stairs: dp[i] depends on whether the single digit and/or the two-digit combination ending at i are valid.",
+        "Watch out for '0' -- it's only valid as the second digit of a two-digit group (10 or 20), never standalone."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1) with rolling variables"
+      },
+      "follow_up_questions": [
+        "How would you extend this if decoding could also use a wildcard character representing any digit?",
+        "How would you reconstruct one valid decoding, not just count them?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Decode Ways"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150"
+      ]
+    },
+    {
+      "id": "str-m-07",
+      "title": "Palindromic Substrings (Count)",
+      "topic": "String",
+      "difficulty": "Medium",
+      "patterns": [
+        "expand-around-center",
+        "dynamic-programming"
+      ],
+      "problem_statement": "Given a string, count how many substrings of it are palindromes, counting different occurrences at different positions separately.",
+      "constraints": [
+        "1 <= length <= 1000"
+      ],
+      "examples": [
+        {
+          "input": "'abc'",
+          "output": "3",
+          "explanation": "'a','b','c' are the only palindromic substrings"
+        },
+        {
+          "input": "'aaa'",
+          "output": "6",
+          "explanation": "'a','a','a','aa','aa','aaa'"
+        }
+      ],
+      "hints": [
+        "This is closely related to Longest Palindromic Substring -- the same expand-around-center technique applies, just counting instead of tracking the max.",
+        "Each of the 2n-1 centers contributes some number of palindromes as it expands outward."
+      ],
+      "optimal_complexity": {
+        "time": "O(n^2)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How does Manacher's algorithm let you count all palindromic substrings in O(n)?",
+        "How would you count only distinct palindromic substrings, ignoring position?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Palindromic Substrings"
+      },
+      "prep_sheets_seen_on": [
+        "NeetCode 150"
+      ]
+    },
+    {
+      "id": "str-m-08",
+      "title": "Letter Combinations of a Phone Number",
+      "topic": "String",
+      "difficulty": "Medium",
+      "patterns": [
+        "backtracking"
+      ],
+      "problem_statement": "Given a string of digits from 2-9, return all possible letter combinations the number could represent, based on the standard telephone keypad mapping.",
+      "constraints": [
+        "0 <= length <= 4"
+      ],
+      "examples": [
+        {
+          "input": "'23'",
+          "output": "['ad','ae','af','bd','be','bf','cd','ce','cf']"
+        },
+        {
+          "input": "''",
+          "output": "[]"
+        }
+      ],
+      "hints": [
+        "Backtracking builds up one combination at a time: pick a letter for the current digit, recurse on the rest, then undo and try the next letter.",
+        "The digit-to-letters mapping drives the branching factor at each recursive step."
+      ],
+      "optimal_complexity": {
+        "time": "O(4^n * n) worst case",
+        "space": "O(n)"
+      },
+      "follow_up_questions": [
+        "How would you generate combinations lazily (one at a time) instead of all at once, to save memory?",
+        "How does this generalize to other keypad layouts, like a T9 predictive text mapping?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Letter Combinations of a Phone Number"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "str-h-01",
+      "title": "Minimum Window Substring",
+      "topic": "String",
+      "difficulty": "Hard",
+      "patterns": [
+        "sliding-window",
+        "hash-map"
+      ],
+      "problem_statement": "Given two strings s and t, find the smallest substring of s that contains every character of t, including duplicates. Return an empty string if no such window exists.",
+      "constraints": [
+        "1 <= s.length, t.length <= 10^5"
+      ],
+      "examples": [
+        {
+          "input": "s='ADOBECODEBANC', t='ABC'",
+          "output": "'BANC'"
+        },
+        {
+          "input": "s='a', t='aa'",
+          "output": "''",
+          "explanation": "s doesn't contain two a's"
+        }
+      ],
+      "hints": [
+        "Expand a right pointer to include characters until the window satisfies t's requirements, then contract from the left to find the minimal valid window.",
+        "Track how many of t's required distinct characters are currently fully satisfied in the window, to know in O(1) when the window is valid."
+      ],
+      "optimal_complexity": {
+        "time": "O(n+m)",
+        "space": "O(m)"
+      },
+      "follow_up_questions": [
+        "How would you find the minimum window that contains at least one occurrence of each of several different target strings?",
+        "How would you adapt this to a streaming version of s where you can't look back?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Minimum Window Substring"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "str-h-02",
+      "title": "Regular Expression Matching",
+      "topic": "String",
+      "difficulty": "Hard",
+      "patterns": [
+        "dynamic-programming",
+        "recursion"
+      ],
+      "problem_statement": "Given a string s and a pattern p that may include '.' (matches any single character) and '*' (matches zero or more of the preceding element), implement matching that covers the entire input string.",
+      "constraints": [
+        "1 <= s.length <= 20",
+        "1 <= p.length <= 20"
+      ],
+      "examples": [
+        {
+          "input": "s='aa', p='a*'",
+          "output": "true",
+          "explanation": "'*' means zero or more of the preceding 'a'"
+        },
+        {
+          "input": "s='mississippi', p='mis*is*p*.'",
+          "output": "false"
+        }
+      ],
+      "hints": [
+        "Define dp[i][j] as whether s[0:i] matches p[0:j], and think through the transitions for a normal character, '.', and '*' separately.",
+        "The '*' case has two sub-cases: treating the preceding element as occurring zero times, or matching one more occurrence and staying on the same pattern position."
+      ],
+      "optimal_complexity": {
+        "time": "O(n*m)",
+        "space": "O(n*m)"
+      },
+      "follow_up_questions": [
+        "How would you extend this to also support '+' and '?' quantifiers?",
+        "How does this relate to building an NFA for regex matching?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Regular Expression Matching"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "str-h-03",
+      "title": "Text Justification",
+      "topic": "String",
+      "difficulty": "Hard",
+      "patterns": [
+        "greedy",
+        "simulation"
+      ],
+      "problem_statement": "Given an array of words and a maximum line width, format the text so each line has exactly that width, with words packed greedily and extra spaces distributed as evenly as possible (left-heavy when uneven). The last line should be left-justified with single spaces and padded with trailing spaces.",
+      "constraints": [
+        "1 <= words.length <= 300",
+        "1 <= maxWidth <= 100"
+      ],
+      "examples": [
+        {
+          "input": "words=['This','is','an','example','of','text','justification.'], maxWidth=16",
+          "output": "['This    is    an','example  of text','justification.  ']"
+        }
+      ],
+      "hints": [
+        "Greedily fit as many words as possible on each line before deciding how to distribute the spaces.",
+        "Handle three cases separately: a full line with multiple words, a line with only one word, and the final line."
+      ],
+      "optimal_complexity": {
+        "time": "O(total characters)",
+        "space": "O(total characters)"
+      },
+      "follow_up_questions": [
+        "How would you handle a target width that varies per line (e.g. for a trapezoidal layout)?",
+        "How would you adapt this for right-to-left text justification?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Text Justification"
+      },
+      "prep_sheets_seen_on": [
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "ll-e-01",
+      "title": "Reverse Linked List",
+      "topic": "Linked List",
+      "difficulty": "Easy",
+      "patterns": [
+        "pointer-manipulation"
+      ],
+      "problem_statement": "Given the head of a singly linked list, reverse the list in-place and return the new head.",
+      "constraints": [
+        "0 <= n <= 5000"
+      ],
+      "examples": [
+        {
+          "input": "1->2->3->4->5",
+          "output": "5->4->3->2->1"
+        },
+        {
+          "input": "1->2",
+          "output": "2->1"
+        }
+      ],
+      "hints": [
+        "Track three pointers as you walk the list -- previous, current, and next -- re-linking one node at a time.",
+        "Can you also express this recursively, reversing the rest of the list first and then fixing the current node's links?"
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1) iterative / O(n) recursive"
+      },
+      "follow_up_questions": [
+        "How would you reverse only a sublist between positions m and n?",
+        "How would you reverse the list in groups of k nodes?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Reverse Linked List"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "ll-e-02",
+      "title": "Merge Two Sorted Lists",
+      "topic": "Linked List",
+      "difficulty": "Easy",
+      "patterns": [
+        "two-pointer",
+        "dummy-node"
+      ],
+      "problem_statement": "Given the heads of two sorted linked lists, merge them into one sorted list by splicing together the existing nodes, and return the head.",
+      "constraints": [
+        "0 <= n, m <= 50"
+      ],
+      "examples": [
+        {
+          "input": "l1=1->2->4, l2=1->3->4",
+          "output": "1->1->2->3->4->4"
+        },
+        {
+          "input": "l1=[], l2=[]",
+          "output": "[]"
+        }
+      ],
+      "hints": [
+        "A dummy head node simplifies edge cases so you don't need special logic for the very first node.",
+        "At each step, attach whichever current node (from l1 or l2) has the smaller value, then advance that list's pointer."
+      ],
+      "optimal_complexity": {
+        "time": "O(n+m)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would you merge k sorted lists efficiently, not just two?",
+        "How would you merge two sorted doubly linked lists?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Merge Two Sorted Lists"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "ll-e-03",
+      "title": "Linked List Cycle",
+      "topic": "Linked List",
+      "difficulty": "Easy",
+      "patterns": [
+        "floyd-cycle-detection",
+        "two-pointer"
+      ],
+      "problem_statement": "Given the head of a linked list, determine whether the list contains a cycle (a node reachable again by following next pointers).",
+      "constraints": [
+        "0 <= n <= 10^4"
+      ],
+      "examples": [
+        {
+          "input": "3->2->0->-4 (tail connects back to the node at index 1)",
+          "output": "true"
+        },
+        {
+          "input": "1->2 (no cycle)",
+          "output": "false"
+        }
+      ],
+      "hints": [
+        "A hash set of visited nodes works but uses O(n) space -- can you detect a cycle in O(1) space?",
+        "Floyd's tortoise and hare: a slow pointer moving one step and a fast pointer moving two steps will eventually meet if and only if a cycle exists."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would you find the node where the cycle begins, not just detect that one exists?",
+        "How would you find the length of the cycle once detected?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Linked List Cycle"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "ll-e-04",
+      "title": "Middle of the Linked List",
+      "topic": "Linked List",
+      "difficulty": "Easy",
+      "patterns": [
+        "slow-fast-pointer"
+      ],
+      "problem_statement": "Given the head of a singly linked list, return the middle node. If there are two middle nodes (even length), return the second one.",
+      "constraints": [
+        "1 <= n <= 100"
+      ],
+      "examples": [
+        {
+          "input": "1->2->3->4->5",
+          "output": "3 (node with value 3)"
+        },
+        {
+          "input": "1->2->3->4->5->6",
+          "output": "4 (node with value 4)"
+        }
+      ],
+      "hints": [
+        "A two-pass approach (count then walk) works but visits the list twice -- can you find the middle in one pass?",
+        "A fast pointer moving two steps for every one step of a slow pointer lands the slow pointer at the middle when the fast pointer reaches the end."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would you modify this to return the first middle node instead of the second for even-length lists?",
+        "How would you delete the middle node directly using this same technique?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Middle of the Linked List"
+      },
+      "prep_sheets_seen_on": [
+        "NeetCode 150",
+        "Striver A2Z"
+      ]
+    },
+    {
+      "id": "ll-e-05",
+      "title": "Palindrome Linked List",
+      "topic": "Linked List",
+      "difficulty": "Easy",
+      "patterns": [
+        "slow-fast-pointer",
+        "reversal"
+      ],
+      "problem_statement": "Given the head of a singly linked list, determine whether it reads the same forwards and backwards.",
+      "constraints": [
+        "1 <= n <= 10^5"
+      ],
+      "examples": [
+        {
+          "input": "1->2->2->1",
+          "output": "true"
+        },
+        {
+          "input": "1->2",
+          "output": "false"
+        }
+      ],
+      "hints": [
+        "Copying values into an array lets you check with two pointers in O(n) space -- can you do it in O(1) space instead?",
+        "Find the middle with slow/fast pointers, reverse the second half in-place, then compare it against the first half."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "If you reverse the second half in-place to solve this, how would you restore the list to its original structure afterward?",
+        "How would you solve this for a doubly linked list more simply?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Palindrome Linked List"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150"
+      ]
+    },
+    {
+      "id": "ll-m-01",
+      "title": "Remove Nth Node From End of List",
+      "topic": "Linked List",
+      "difficulty": "Medium",
+      "patterns": [
+        "two-pointer",
+        "dummy-node"
+      ],
+      "problem_statement": "Given the head of a linked list, remove the n-th node from the end of the list and return the head, doing so in a single pass.",
+      "constraints": [
+        "1 <= n <= sz <= 30"
+      ],
+      "examples": [
+        {
+          "input": "1->2->3->4->5, n=2",
+          "output": "1->2->3->5"
+        },
+        {
+          "input": "1, n=1",
+          "output": "[] (empty list)"
+        }
+      ],
+      "hints": [
+        "A two-pass approach (get length, then walk to the right spot) is straightforward -- can you do it in one pass?",
+        "Advance a fast pointer n steps ahead first, then move both fast and slow together; when fast reaches the end, slow is just before the node to remove."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would you handle removing the n-th node from the front instead?",
+        "How would you adapt this to a doubly linked list, and would it get simpler?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Remove Nth Node From End of List"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "ll-m-02",
+      "title": "Reorder List",
+      "topic": "Linked List",
+      "difficulty": "Medium",
+      "patterns": [
+        "slow-fast-pointer",
+        "reversal",
+        "merge"
+      ],
+      "problem_statement": "Given the head of a singly linked list L0 -> L1 -> ... -> Ln, reorder it in-place to L0 -> Ln -> L1 -> Ln-1 -> L2 -> Ln-2 -> ...",
+      "constraints": [
+        "1 <= n <= 5*10^4"
+      ],
+      "examples": [
+        {
+          "input": "1->2->3->4",
+          "output": "1->4->2->3"
+        },
+        {
+          "input": "1->2->3->4->5",
+          "output": "1->5->2->4->3"
+        }
+      ],
+      "hints": [
+        "Break the problem into three steps: find the middle, reverse the second half, then merge the two halves by alternating nodes.",
+        "Each of the three sub-steps is a classic pattern you may have solved separately before."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would you reorder into a different alternating pattern, e.g. three-way interleaving?",
+        "What changes if the list is circular?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Reorder List"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "ll-m-03",
+      "title": "Add Two Numbers",
+      "topic": "Linked List",
+      "difficulty": "Medium",
+      "patterns": [
+        "linked-list-arithmetic",
+        "carry-propagation"
+      ],
+      "problem_statement": "Given two non-empty linked lists representing two non-negative integers with digits stored in reverse order (each node holds a single digit), add the two numbers and return the sum as a linked list in the same reversed-digit format.",
+      "constraints": [
+        "1 <= n, m <= 100",
+        "0 <= digit <= 9"
+      ],
+      "examples": [
+        {
+          "input": "l1=2->4->3, l2=5->6->4",
+          "output": "7->0->8",
+          "explanation": "342 + 465 = 807"
+        },
+        {
+          "input": "l1=0, l2=0",
+          "output": "0"
+        }
+      ],
+      "hints": [
+        "Walk both lists simultaneously, adding corresponding digits plus any carry from the previous step, creating a new node for each resulting digit.",
+        "Don't forget to handle lists of different lengths, and a possible final carry after both lists are exhausted."
+      ],
+      "optimal_complexity": {
+        "time": "O(max(n,m))",
+        "space": "O(max(n,m))"
+      },
+      "follow_up_questions": [
+        "How would this change if the digits were stored in forward (most-significant-first) order instead?",
+        "How would you add more than two numbers represented this way?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Add Two Numbers"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "ll-m-04",
+      "title": "Copy List with Random Pointer",
+      "topic": "Linked List",
+      "difficulty": "Medium",
+      "patterns": [
+        "hash-map",
+        "interleaving"
+      ],
+      "problem_statement": "Given a linked list where each node has a next pointer and an additional random pointer that can point to any node in the list or to null, create a deep copy of the list.",
+      "constraints": [
+        "0 <= n <= 1000"
+      ],
+      "examples": [
+        {
+          "input": "[[7,null],[13,0],[11,4],[10,2],[1,0]]",
+          "output": "a structurally identical deep copy with random pointers correctly re-mapped to the new nodes"
+        }
+      ],
+      "hints": [
+        "A hash map from original node to its copy lets you resolve both next and random pointers in a second pass -- O(n) space.",
+        "For O(1) extra space, interleave copied nodes directly after their originals (A->A'->B->B'->...), use that interleaving to set random pointers, then unweave the two lists."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(n) with hash map, O(1) with interleaving"
+      },
+      "follow_up_questions": [
+        "Walk through why the interleaving trick lets you set each copy's random pointer correctly.",
+        "How would you extend this to a node whose random pointer can point into a *different* list?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Copy List with Random Pointer"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "ll-m-05",
+      "title": "Odd Even Linked List",
+      "topic": "Linked List",
+      "difficulty": "Medium",
+      "patterns": [
+        "pointer-manipulation",
+        "in-place"
+      ],
+      "problem_statement": "Given the head of a singly linked list, group all nodes at odd indices together followed by all nodes at even indices (1-indexed, preserving each group's relative order), in-place with O(1) extra space.",
+      "constraints": [
+        "0 <= n <= 10^4"
+      ],
+      "examples": [
+        {
+          "input": "1->2->3->4->5",
+          "output": "1->3->5->2->4"
+        },
+        {
+          "input": "2->1->3->5->6->4->7",
+          "output": "2->3->6->7->1->5->4"
+        }
+      ],
+      "hints": [
+        "Maintain two separate chains (odd and even) as you walk the list once, then splice the even chain onto the end of the odd chain.",
+        "Keep a saved reference to the even chain's head before rewiring pointers, or you'll lose track of where to splice it back in."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would this generalize to grouping nodes by index mod k instead of just odd/even?",
+        "How would you solve this for a doubly linked list?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Odd Even Linked List"
+      },
+      "prep_sheets_seen_on": [
+        "NeetCode 150"
+      ]
+    },
+    {
+      "id": "ll-m-06",
+      "title": "Rotate List",
+      "topic": "Linked List",
+      "difficulty": "Medium",
+      "patterns": [
+        "pointer-manipulation",
+        "circular-linking"
+      ],
+      "problem_statement": "Given the head of a linked list, rotate the list to the right by k places.",
+      "constraints": [
+        "0 <= n <= 500",
+        "0 <= k <= 2*10^9"
+      ],
+      "examples": [
+        {
+          "input": "1->2->3->4->5, k=2",
+          "output": "4->5->1->2->3"
+        },
+        {
+          "input": "0->1->2, k=4",
+          "output": "2->0->1"
+        }
+      ],
+      "hints": [
+        "First find the list's length so you can reduce k modulo length -- rotating by the full length is a no-op.",
+        "Connect the tail to the head to form a temporary circle, then break it at the correct new starting point."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would you rotate left instead of right?",
+        "How would you handle this if k were given as a live stream and could change after each query?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Rotate List"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150"
+      ]
+    },
+    {
+      "id": "ll-m-07",
+      "title": "Swap Nodes in Pairs",
+      "topic": "Linked List",
+      "difficulty": "Medium",
+      "patterns": [
+        "pointer-manipulation",
+        "dummy-node"
+      ],
+      "problem_statement": "Given a linked list, swap every two adjacent nodes and return the head, without modifying the values inside the nodes -- only the links may change.",
+      "constraints": [
+        "0 <= n <= 100"
+      ],
+      "examples": [
+        {
+          "input": "1->2->3->4",
+          "output": "2->1->4->3"
+        },
+        {
+          "input": "1",
+          "output": "1"
+        }
+      ],
+      "hints": [
+        "A dummy node before the head simplifies keeping track of the node just before each pair being swapped.",
+        "For each pair, carefully re-point three links in the right order so you don't lose the reference to the rest of the list."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1) iterative"
+      },
+      "follow_up_questions": [
+        "How would you generalize this to swapping nodes in groups of k?",
+        "Can you write a clean recursive version, and how does its space complexity compare to the iterative one?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Swap Nodes in Pairs"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150"
+      ]
+    },
+    {
+      "id": "ll-m-08",
+      "title": "Partition List",
+      "topic": "Linked List",
+      "difficulty": "Medium",
+      "patterns": [
+        "two-pointer",
+        "dummy-node"
+      ],
+      "problem_statement": "Given the head of a linked list and a value x, partition it so all nodes less than x come before all nodes greater than or equal to x, preserving the original relative order within each partition.",
+      "constraints": [
+        "0 <= n <= 200"
+      ],
+      "examples": [
+        {
+          "input": "1->4->3->2->5->2, x=3",
+          "output": "1->2->2->4->3->5"
+        },
+        {
+          "input": "2->1, x=2",
+          "output": "1->2"
+        }
+      ],
+      "hints": [
+        "Build two separate lists (values < x, and values >= x) as you walk through once, then join them at the end.",
+        "Using dummy heads for both sublists avoids special-casing whichever list ends up empty."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1)"
+      },
+      "follow_up_questions": [
+        "How would you partition into three groups instead of two (less than, equal to, greater than x)?",
+        "How does this compare to the partition step in quicksort on an array?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Partition List"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z"
+      ]
+    },
+    {
+      "id": "ll-h-01",
+      "title": "Merge k Sorted Lists",
+      "topic": "Linked List",
+      "difficulty": "Hard",
+      "patterns": [
+        "heap",
+        "divide-and-conquer"
+      ],
+      "problem_statement": "Given an array of k sorted linked lists, merge them all into one sorted linked list and return its head.",
+      "constraints": [
+        "0 <= k <= 10^4",
+        "total nodes across all lists <= 10^4"
+      ],
+      "examples": [
+        {
+          "input": "lists=[1->4->5, 1->3->4, 2->6]",
+          "output": "1->1->2->3->4->4->5->6"
+        },
+        {
+          "input": "lists=[]",
+          "output": "[]"
+        }
+      ],
+      "hints": [
+        "Merging lists two at a time sequentially works but costs O(kn) total -- a min-heap over the current front of each list gets you to O(n log k).",
+        "Divide-and-conquer (pairwise merging, halving the number of lists each round) reaches the same O(n log k) bound without an explicit heap."
+      ],
+      "optimal_complexity": {
+        "time": "O(n log k)",
+        "space": "O(k)"
+      },
+      "follow_up_questions": [
+        "How do the heap-based and divide-and-conquer approaches compare in practice for very large k?",
+        "How would you merge k sorted lists if they were extremely large and stored on disk?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Merge k Sorted Lists"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "ll-h-02",
+      "title": "Reverse Nodes in k-Group",
+      "topic": "Linked List",
+      "difficulty": "Hard",
+      "patterns": [
+        "pointer-manipulation",
+        "recursion"
+      ],
+      "problem_statement": "Given the head of a linked list, reverse the nodes in groups of k and return the modified list. If the number of remaining nodes is not a multiple of k, leave the final group as-is.",
+      "constraints": [
+        "1 <= n <= 5000",
+        "1 <= k <= n"
+      ],
+      "examples": [
+        {
+          "input": "1->2->3->4->5, k=2",
+          "output": "2->1->4->3->5"
+        },
+        {
+          "input": "1->2->3->4->5, k=3",
+          "output": "3->2->1->4->5"
+        }
+      ],
+      "hints": [
+        "First check whether at least k nodes remain -- if not, leave that final segment unreversed.",
+        "Reversing a group is the same pointer-manipulation as reversing a whole list; the harder part is correctly re-linking each group's boundary to the next."
+      ],
+      "optimal_complexity": {
+        "time": "O(n)",
+        "space": "O(1) iterative / O(n/k) recursive"
+      },
+      "follow_up_questions": [
+        "How would you reverse the list in groups of k while leaving every other group untouched?",
+        "What's the trade-off between the iterative and recursive implementations here?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "Reverse Nodes in k-Group"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    },
+    {
+      "id": "ll-h-03",
+      "title": "LRU Cache",
+      "topic": "Linked List",
+      "difficulty": "Hard",
+      "patterns": [
+        "hash-map",
+        "doubly-linked-list",
+        "design"
+      ],
+      "problem_statement": "Design a data structure that implements a Least Recently Used (LRU) cache. It should support get and put operations in O(1) average time, evicting the least recently used entry when capacity is exceeded.",
+      "constraints": [
+        "1 <= capacity <= 3000",
+        "0 <= key, value <= 10^4",
+        "at most 2*10^5 operations"
+      ],
+      "examples": [
+        {
+          "input": "capacity=2; put(1,1); put(2,2); get(1); put(3,3) evicts key 2; get(2)",
+          "output": "get(1) -> 1, get(2) -> -1"
+        }
+      ],
+      "hints": [
+        "A hash map alone gives O(1) lookup but no ordering; a linked list alone gives ordering but O(n) lookup -- combine both.",
+        "A doubly linked list lets you move a node to the front (mark as recently used) or remove the tail (evict) in O(1), while the hash map gives O(1) access to any node by key."
+      ],
+      "optimal_complexity": {
+        "time": "O(1) average per operation",
+        "space": "O(capacity)"
+      },
+      "follow_up_questions": [
+        "How would you design an LFU (Least Frequently Used) cache instead, and how does the data structure combination change?",
+        "How would you make this cache thread-safe under concurrent access?"
+      ],
+      "source_reference": {
+        "platform": "LeetCode",
+        "problem_name": "LRU Cache"
+      },
+      "prep_sheets_seen_on": [
+        "Striver A2Z",
+        "NeetCode 150",
+        "Blind 75"
+      ]
+    }
+  ]
+}
