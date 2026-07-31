@@ -12,6 +12,7 @@ import uuid
 
 from fastapi import WebSocket
 from loguru import logger
+from pipecat.adapters.schemas.direct_function import tool_options
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.frames.frames import LLMRunFrame
 from pipecat.pipeline.pipeline import Pipeline
@@ -143,6 +144,12 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
         settings=DeepgramTTSService.Settings(voice="aura-2-thalia-en"),
     )
 
+    # cancel_on_interruption=False: these are near-instant (dict lookups), and cancelling them
+    # mid-flight when the candidate talks again (very common -- they're often still mid-sentence
+    # right when the tool is invoked) left the result forever stuck as the "IN_PROGRESS"
+    # placeholder in context, so the LLM never actually saw the real code or the escalation
+    # result. See CLAUDE.md Corrections Log.
+    @tool_options(cancel_on_interruption=False, timeout_secs=10)
     async def get_current_code(params: FunctionCallParams):
         """Read the candidate's current code so far, exactly as it's written in their editor.
 
@@ -154,6 +161,7 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
             {"code": code or "(the candidate hasn't written any code yet)"}
         )
 
+    @tool_options(cancel_on_interruption=False, timeout_secs=10)
     async def escalate_to_harder_problem(params: FunctionCallParams):
         """Move to a harder follow-up problem in the same topic, once the candidate has solved
         the current one well (correct, good complexity discussion, handled edge cases).
