@@ -1,10 +1,14 @@
-"""v0a voice spike: mic -> Silero VAD -> Deepgram Flux (STT) -> Groq (LLM) -> Deepgram Aura-2 (TTS) -> speaker.
+"""Voice pipeline: mic -> Silero VAD -> Deepgram Flux (STT) -> Groq (LLM) -> Deepgram Aura-2 (TTS) -> speaker.
 
-Minimal on purpose -- this only proves the real-time interruptible conversation feels right.
-Not connected to problems, code, or session persistence yet (see docs/01_SPEC.md v0a scope).
+Wires the problem bank + interview logic (see problems.py / interview.py) into the pipeline
+validated in v0a: problem/persona selection, the get_current_code and escalate_to_harder_problem
+tools, and session persistence (transcript + code snapshots + scorecard) on disconnect.
 """
 
 import asyncio
+import json
+import time
+import uuid
 
 from fastapi import WebSocket
 from loguru import logger
@@ -21,16 +25,11 @@ from pipecat.serializers.protobuf import ProtobufFrameSerializer
 from pipecat.services.deepgram.flux.stt import DeepgramFluxSTTService
 from pipecat.services.deepgram.tts import DeepgramTTSService
 from pipecat.services.groq.llm import GroqLLMService
+from pipecat.services.llm_service import FunctionCallParams
 from pipecat.transports.websocket.fastapi import FastAPIWebsocketParams, FastAPIWebsocketTransport
 from pipecat.workers.runner import WorkerRunner
 
-from app import config
-
-SYSTEM_INSTRUCTION = """You are a friendly technical interviewer conducting a practice DSA
-(data structures and algorithms) interview. Keep responses brief and conversational -- this is
-a spoken conversation, not text chat. This is an early connection test (v0a): just have a
-natural conversation to confirm the voice pipeline works. Greet the candidate, ask them how
-they're doing, and chat naturally about a simple topic like their favorite programming language."""
+from app import config, interview, problems
 
 # One long-lived runner for the app's lifetime -- Pipecat's documented pattern for embedding
 # in a persistent host like a FastAPI server (workers are added/removed per session).
@@ -38,6 +37,15 @@ they're doing, and chat naturally about a simple topic like their favorite progr
 # running event loop, which doesn't exist yet at import time.
 runner: WorkerRunner | None = None
 _runner_task: asyncio.Task | None = None
+
+# Live sessions, keyed by session_id, so the HTTP code-snapshot endpoint (main.py) and the
+# get_current_code tool (below) can share state without any extra plumbing.
+ACTIVE_SESSIONS: dict[str, dict] = {}
+
+# Sessions created via POST /api/sessions (main.py) but not yet connected to /ws/voice -- lets
+# the frontend know the exact problem selected (to render it as text) before opening the voice
+# WebSocket, instead of the problem being picked (again, differently) at connect time.
+PENDING_SESSIONS: dict[str, dict] = {}
 
 
 async def start_runner() -> None:
@@ -56,8 +64,61 @@ async def stop_runner() -> None:
     logger.info("Voice pipeline WorkerRunner stopped")
 
 
+def _pick_initial_problem(topic: str | None, difficulty: str | None) -> dict:
+    topic = topic if topic in problems.TOPICS else problems.TOPICS[0]
+    difficulty = difficulty if difficulty in problems.DIFFICULTY_ORDER else problems.DIFFICULTY_ORDER[0]
+    return problems.select_problem(topic, difficulty)
+
+
+def _persist_session(session: dict, transcript: list[dict], scorecard: dict | None) -> None:
+    config.SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
+    path = config.SESSIONS_DIR / f"{time.strftime('%Y%m%dT%H%M%S')}-{session['session_id']}.json"
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "session_id": session["session_id"],
+                "persona": session["persona"],
+                "initial_problem_id": session["initial_problem_id"],
+                "final_problem_id": session["current_problem"]["id"],
+                "escalated": session["escalated"],
+                "code_snapshots": session["code_snapshots"],
+                "final_code": session["latest_code"],
+                "transcript": transcript,
+                "scorecard": scorecard,
+            },
+            f,
+            indent=2,
+            ensure_ascii=False,
+        )
+    logger.info(f"Session written to {path}")
+
+
 async def handle_voice_websocket(websocket: WebSocket) -> None:
     """Build and register one PipelineWorker for a single voice session."""
+    query_params = websocket.query_params
+    session_id = query_params.get("session_id") or str(uuid.uuid4())
+
+    pending = PENDING_SESSIONS.pop(session_id, None)
+    if pending is not None:
+        # Normal flow: frontend already called POST /api/sessions, so the problem shown on
+        # screen and the problem the voice pipeline discusses are guaranteed to match.
+        persona = pending["persona"]
+        initial_problem = pending["problem"]
+    else:
+        # Fallback for direct/manual connections (e.g. quick testing) that skip the REST call.
+        persona = query_params.get("persona") if query_params.get("persona") in interview.PERSONAS else "neutral"
+        initial_problem = _pick_initial_problem(query_params.get("topic"), query_params.get("difficulty"))
+    session = {
+        "session_id": session_id,
+        "persona": persona,
+        "initial_problem_id": initial_problem["id"],
+        "current_problem": initial_problem,
+        "escalated": False,
+        "latest_code": "",
+        "code_snapshots": [],
+    }
+    ACTIVE_SESSIONS[session_id] = session
+
     transport = FastAPIWebsocketTransport(
         websocket=websocket,
         params=FastAPIWebsocketParams(
@@ -82,15 +143,48 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
         settings=DeepgramTTSService.Settings(voice="aura-2-thalia-en"),
     )
 
+    async def get_current_code(params: FunctionCallParams):
+        """Read the candidate's current code so far, exactly as it's written in their editor.
+
+        Call this whenever it's relevant to see what they've written -- don't ask them to read
+        their code aloud.
+        """
+        code = session["latest_code"]
+        await params.result_callback(
+            {"code": code or "(the candidate hasn't written any code yet)"}
+        )
+
+    async def escalate_to_harder_problem(params: FunctionCallParams):
+        """Move to a harder follow-up problem in the same topic, once the candidate has solved
+        the current one well (correct, good complexity discussion, handled edge cases).
+        """
+        candidate = problems.get_escalation_candidate(session["current_problem"])
+        if candidate is None:
+            await params.result_callback(
+                {"escalated": False, "message": "Already at the hardest tier for this topic."}
+            )
+            return
+        session["current_problem"] = candidate
+        session["escalated"] = True
+        await params.result_callback(
+            {
+                "escalated": True,
+                "title": candidate["title"],
+                "difficulty": candidate["difficulty"],
+                "problem_statement": candidate["problem_statement"],
+                "constraints": candidate["constraints"],
+            }
+        )
+
     llm = GroqLLMService(
         api_key=config.GROQ_API_KEY,
         settings=GroqLLMService.Settings(
             model=config.GROQ_MODEL,
-            system_instruction=SYSTEM_INSTRUCTION,
+            system_instruction=interview.build_system_instruction(initial_problem, persona),
         ),
     )
 
-    context = LLMContext()
+    context = LLMContext(tools=[get_current_code, escalate_to_harder_problem])
     user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
         context,
         user_params=LLMUserAggregatorParams(vad_analyzer=SileroVADAnalyzer()),
@@ -115,8 +209,8 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
 
     @worker.rtvi.event_handler("on_client_ready")
     async def on_client_ready(rtvi):
-        logger.info("Voice client ready")
-        context.add_message({"role": "developer", "content": "Greet the candidate now."})
+        logger.info(f"Voice client ready (session={session_id}, problem={initial_problem['id']})")
+        context.add_message({"role": "developer", "content": "Greet the candidate and present the problem now."})
         await worker.queue_frames([LLMRunFrame()])
 
     @transport.event_handler("on_client_connected")
@@ -133,3 +227,14 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
     # waiting here, this route handler (and the @app.websocket function above it) returns right
     # away, and Starlette closes the WebSocket out from under the still-running pipeline.
     await worker.wait()
+
+    transcript = list(context.messages)
+    scorecard = None
+    try:
+        scorecard = await interview.generate_scorecard(
+            transcript, session["latest_code"], session["current_problem"]
+        )
+    except Exception:
+        logger.exception("Scorecard generation failed -- session will still be saved without it")
+    _persist_session(session, transcript, scorecard)
+    ACTIVE_SESSIONS.pop(session_id, None)
