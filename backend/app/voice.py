@@ -149,23 +149,40 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
     # right when the tool is invoked) left the result forever stuck as the "IN_PROGRESS"
     # placeholder in context, so the LLM never actually saw the real code or the escalation
     # result. See CLAUDE.md Corrections Log.
+    #
+    # Both tools require a real (non-optional) `reason` argument -- not just documentation, a
+    # workaround for a confirmed Pipecat/Groq bug: a zero-parameter tool gets called with the
+    # literal string "null" as its arguments, and Pipecat's `arguments or "{}"` guard only
+    # catches an *empty* string, not "null" -- so json.loads("null") returns None, and
+    # `function(**None)` crashes. Giving the schema a real parameter sidesteps the zero-argument
+    # code path entirely. See CLAUDE.md Corrections Log.
     @tool_options(cancel_on_interruption=False, timeout_secs=10)
-    async def get_current_code(params: FunctionCallParams):
+    async def get_current_code(params: FunctionCallParams, reason: str):
         """Read the candidate's current code so far, exactly as it's written in their editor.
 
         Call this whenever it's relevant to see what they've written -- don't ask them to read
         their code aloud.
+
+        Args:
+            reason: One short phrase for why you're checking now (e.g. "candidate said they're
+                done", "checking approach so far"). Used for the session log, not spoken aloud.
         """
+        logger.debug(f"get_current_code called ({reason})")
         code = session["latest_code"]
         await params.result_callback(
             {"code": code or "(the candidate hasn't written any code yet)"}
         )
 
     @tool_options(cancel_on_interruption=False, timeout_secs=10)
-    async def escalate_to_harder_problem(params: FunctionCallParams):
+    async def escalate_to_harder_problem(params: FunctionCallParams, reason: str):
         """Move to a harder follow-up problem in the same topic, once the candidate has solved
         the current one well (correct, good complexity discussion, handled edge cases).
+
+        Args:
+            reason: One short phrase for why the candidate earned the escalation (e.g. "correct
+                O(n) solution, explained space complexity correctly"). Used for the session log.
         """
+        logger.debug(f"escalate_to_harder_problem called ({reason})")
         candidate = problems.get_escalation_candidate(session["current_problem"])
         if candidate is None:
             await params.result_callback(
