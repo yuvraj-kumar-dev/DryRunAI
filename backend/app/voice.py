@@ -14,7 +14,7 @@ from fastapi import WebSocket
 from loguru import logger
 from pipecat.adapters.schemas.direct_function import tool_options
 from pipecat.audio.vad.silero import SileroVADAnalyzer
-from pipecat.frames.frames import LLMRunFrame
+from pipecat.frames.frames import ErrorFrame, LLMRunFrame
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineParams, PipelineWorker
 from pipecat.processors.aggregators.llm_context import LLMContext
@@ -117,6 +117,7 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
         "escalated": False,
         "latest_code": "",
         "code_snapshots": [],
+        "llm_error_timestamps": [],
     }
     ACTIVE_SESSIONS[session_id] = session
 
@@ -236,6 +237,28 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
     async def on_client_ready(rtvi):
         logger.info(f"Voice client ready (session={session_id}, problem={initial_problem['id']})")
         context.add_message({"role": "developer", "content": "Greet the candidate and present the problem now."})
+        await worker.queue_frames([LLMRunFrame()])
+
+    @worker.event_handler("on_pipeline_error")
+    async def on_pipeline_error(worker, frame: ErrorFrame):
+        # Groq occasionally fails a completion outright (e.g. a malformed tool-call attempt --
+        # "Failed to call a function. Please adjust your prompt."). Left alone, this means the
+        # candidate just gets silence with no idea whether they were heard. Scoped to the LLM
+        # service specifically (via frame.processor) so this doesn't fire for STT/TTS hiccups,
+        # which already have their own reconnect logic. Rate-limited to at most 2 retries per
+        # 30s so a genuinely stuck/looping failure doesn't hammer the API instead of just giving
+        # up and staying silent for that one turn.
+        if frame.fatal or not isinstance(frame.processor, GroqLLMService):
+            return
+        now = time.monotonic()
+        recent = [t for t in session["llm_error_timestamps"] if now - t < 30]
+        if len(recent) >= 2:
+            logger.warning(f"LLM error, already retried twice in the last 30s -- not retrying again: {frame.error}")
+            session["llm_error_timestamps"] = recent
+            return
+        recent.append(now)
+        session["llm_error_timestamps"] = recent
+        logger.warning(f"LLM completion failed non-fatally ({frame.error}) -- retrying so the candidate isn't left in silence")
         await worker.queue_frames([LLMRunFrame()])
 
     @transport.event_handler("on_client_connected")
