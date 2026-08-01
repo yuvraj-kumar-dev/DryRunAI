@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PipecatClient, TransportState } from "@pipecat-ai/client-js";
 import { WebSocketTransport, ProtobufFrameSerializer } from "@pipecat-ai/websocket-transport";
+import { AlertTriangle, AudioLines, ChevronDown, Loader2, Mic, PhoneOff } from "lucide-react";
+import { Logo } from "@/components/logo";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 const WS_URL = BACKEND_URL.replace(/^http/, "ws") + "/ws/voice";
@@ -38,7 +40,7 @@ export default function InterviewPage() {
   useEffect(() => {
     const raw = sessionStorage.getItem("dryrunai_session");
     if (!raw) {
-      router.replace("/");
+      router.replace("/practice");
       return;
     }
     const parsed = JSON.parse(raw);
@@ -122,81 +124,103 @@ export default function InterviewPage() {
   if (!problem) return null;
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#0a0a0f] text-[#e5e5ea]">
-      <div className="border-b border-white/10">
-        <button
-          onClick={() => setProblemCollapsed((v) => !v)}
-          className="flex w-full items-center justify-between px-6 py-3 text-left"
-        >
-          <span className="font-medium">
-            {problem.title}{" "}
-            <span className="text-[#8b8b96]">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <header
+        className="flex items-center justify-between gap-4 border-b border-border px-6"
+        style={{ height: "var(--header-height)" }}
+      >
+        <div className="flex min-w-0 items-center gap-3">
+          <Logo className="shrink-0 text-sm" />
+          <span className="hidden text-border sm:inline">/</span>
+          <button
+            onClick={() => setProblemCollapsed((v) => !v)}
+            className="flex min-w-0 items-center gap-2 text-left"
+          >
+            <span className="truncate font-medium">{problem.title}</span>
+            <span className="hidden shrink-0 text-muted-foreground sm:inline">
               ({problem.difficulty}, {problem.topic})
             </span>
-          </span>
-          <span className="text-[#8b8b96]">{problemCollapsed ? "▾" : "▴"}</span>
-        </button>
-        {!problemCollapsed && (
-          <div className="space-y-3 px-6 pb-5 text-sm text-[#c5c5cc]">
-            <p>{problem.problem_statement}</p>
-            <div>
-              <div className="text-xs uppercase tracking-wide text-[#8b8b96]">Constraints</div>
-              <ul className="list-inside list-disc">
-                {problem.constraints.map((c, i) => (
-                  <li key={i}>{c}</li>
-                ))}
-              </ul>
-            </div>
-            {problem.examples.map((ex, i) => (
-              <div key={i} className="rounded-lg bg-[#13131a] p-3 font-mono text-xs">
-                <div>input: {ex.input}</div>
-                <div>output: {ex.output}</div>
-                {ex.explanation && <div className="text-[#8b8b96]">{ex.explanation}</div>}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+            <ChevronDown
+              className={`size-4 shrink-0 text-muted-foreground transition-transform ${problemCollapsed ? "" : "rotate-180"}`}
+            />
+          </button>
+        </div>
+        <StatusPill status={status} />
+      </header>
 
-      <textarea
-        value={code}
-        onChange={(e) => onCodeChange(e.target.value)}
-        placeholder="# write your solution here"
-        spellCheck={false}
-        className="flex-1 resize-none bg-[#0d0d14] p-6 font-mono text-sm text-[#e5e5ea] outline-none"
-      />
+      {!problemCollapsed && (
+        <div className="space-y-3 border-b border-border px-6 py-5 text-sm text-foreground/80">
+          <p>{problem.problem_statement}</p>
+          <div>
+            <div className="font-[family-name:var(--font-display-mono)] text-xs uppercase tracking-wider text-muted-foreground">
+              Constraints
+            </div>
+            <ul className="list-inside list-disc">
+              {problem.constraints.map((c, i) => (
+                <li key={i}>{c}</li>
+              ))}
+            </ul>
+          </div>
+          {problem.examples.map((ex, i) => (
+            <div key={i} className="rounded-md border border-border bg-card p-3 font-[family-name:var(--font-code)] text-xs">
+              <div>input: {ex.input}</div>
+              <div>output: {ex.output}</div>
+              {ex.explanation && <div className="text-muted-foreground">{ex.explanation}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 sm:p-6">
+        <div className="flex min-h-0 flex-1 flex-col rounded-md bg-gradient-to-br from-chart-1 via-chart-2 to-chart-3 p-px shadow-lg">
+          <textarea
+            value={code}
+            onChange={(e) => onCodeChange(e.target.value)}
+            placeholder="# write your solution here"
+            spellCheck={false}
+            className="w-full flex-1 resize-none rounded-[7px] bg-card p-6 font-[family-name:var(--font-code)] text-sm text-foreground outline-none"
+          />
+        </div>
+      </div>
 
       <audio ref={audioRef} autoPlay />
-
-      <div className="flex items-center gap-2 border-t border-white/10 bg-[#13131a] px-6 py-3 text-sm">
-        <span
-          className={`h-2 w-2 rounded-full ${
-            status === "error"
-              ? "bg-red-400"
-              : status === "speaking"
-                ? "bg-gradient-to-r from-indigo-400 to-cyan-300"
-                : "bg-emerald-400"
-          }`}
-        />
-        <span className="text-[#8b8b96]">{statusLabel(status)}</span>
-      </div>
     </div>
   );
 }
 
-function statusLabel(status: VoiceStatus): string {
-  switch (status) {
-    case "connecting":
-      return "Connecting...";
-    case "listening":
-      return "Listening";
-    case "thinking":
-      return "Thinking...";
-    case "speaking":
-      return "Speaking";
-    case "error":
-      return "Connection error";
-    case "ended":
-      return "Session ended";
-  }
+const STATUS_CONFIG: Record<
+  VoiceStatus,
+  { label: string; icon: React.ComponentType<{ className?: string }>; glow: boolean; tone: "active" | "muted" | "error" }
+> = {
+  connecting: { label: "Connecting", icon: Loader2, glow: false, tone: "muted" },
+  listening: { label: "Listening", icon: Mic, glow: true, tone: "active" },
+  thinking: { label: "Thinking", icon: Loader2, glow: true, tone: "active" },
+  speaking: { label: "Speaking", icon: AudioLines, glow: true, tone: "active" },
+  error: { label: "Connection error", icon: AlertTriangle, glow: false, tone: "error" },
+  ended: { label: "Session ended", icon: PhoneOff, glow: false, tone: "muted" },
+};
+
+function StatusPill({ status }: { status: VoiceStatus }) {
+  const { label, icon: Icon, glow, tone } = STATUS_CONFIG[status];
+  const spin = status === "connecting" || status === "thinking";
+
+  return (
+    <div className="relative shrink-0">
+      {glow && (
+        <div className="animate-glow-pulse absolute inset-0 rounded-full bg-gradient-to-r from-chart-1 via-chart-2 to-chart-3 opacity-70 blur-md" />
+      )}
+      <div
+        className={`relative flex items-center gap-2 rounded-full border px-3 py-1.5 backdrop-blur ${
+          tone === "error"
+            ? "border-destructive/40 bg-destructive/10 text-destructive"
+            : "border-border bg-background/80 text-foreground"
+        }`}
+      >
+        <Icon className={`size-3.5 ${spin ? "animate-spin" : ""}`} />
+        <span className="font-[family-name:var(--font-display-mono)] text-xs uppercase tracking-wider">
+          {label}
+        </span>
+      </div>
+    </div>
+  );
 }
