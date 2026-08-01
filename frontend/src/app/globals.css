@@ -1,26 +1,90 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000002;
+  --foreground: #ffffff;
+  --muted-foreground: #a2a9ad;
+  --muted: #dceaf414;
+  --card: #000000;
+  --border: #080c0f;
+  --primary: #ffffff;
+  --primary-foreground: #020105;
+  --secondary: #5a58c2;
+  --accent-foreground: #e5ecf1;
+  --destructive: #f16a72;
+  --chart-1: #735fe9;
+  --chart-2: #ce47eb;
+  --chart-3: #f47b74;
+  --radius: 0.5rem;
+  --header-height: 4.25rem;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --font-sans: var(--font-sans);
+  --font-display-mono: var(--font-display-mono);
+  --font-code: var(--font-code);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Three-stop headline gradient: violet -> magenta -> coral, left to right, interpolated
+   in oklab (matches the reference's --tw-gradient-position: to right in oklab -- oklab
+   interpolation keeps the middle of a 3-stop gradient from muddying the way sRGB does). */
+.text-gradient {
+  background-image: linear-gradient(to right in oklab, var(--chart-1), var(--chart-2), var(--chart-3));
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Subtle gradient card fill (from-card via-card to-background) instead of a flat bg-card --
+   the reference never uses a flat card fill, always this faint top-to-bottom wash. */
+.bg-card-wash {
+  background-image: linear-gradient(to top, var(--background), var(--card) 60%, var(--card));
+}
+
+/* Fine RGB grain, generated procedurally (not a shipped raster asset) -- tiled at a small
+   size and blended at high opacity, same as the reference's tiled noise texture. Overlay
+   blend mode naturally attenuates on near-black pixels, so a high nominal opacity still
+   reads as fine grain rather than washing out the background. Applied via <GrainOverlay />. */
+.bg-grain {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='84' height='84'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 84px 84px;
+  mix-blend-mode: overlay;
+  opacity: 0.9;
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 4s ease-in-out infinite;
 }
