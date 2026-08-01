@@ -14,7 +14,8 @@ from fastapi import WebSocket
 from loguru import logger
 from pipecat.adapters.schemas.direct_function import tool_options
 from pipecat.audio.vad.silero import SileroVADAnalyzer
-from pipecat.frames.frames import ErrorFrame, LLMRunFrame
+from pipecat.frames.frames import ErrorFrame, LLMRunFrame, MetricsFrame
+from pipecat.observers.base_observer import BaseObserver, FramePushed
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineParams, PipelineWorker
 from pipecat.processors.aggregators.llm_context import LLMContext
@@ -65,6 +66,28 @@ async def stop_runner() -> None:
     logger.info("Voice pipeline WorkerRunner stopped")
 
 
+class _LatencyObserver(BaseObserver):
+    """Logs every MetricsFrame (TTFB/TTFA per service) with elapsed time since session start.
+
+    `enable_metrics=True` on PipelineWorker already computes these numbers internally, but
+    they're normally only surfaced to an RTVI-aware client, not the server log. Added to
+    diagnose the ~10-15s first-response latency seen in early voice tests -- this pinpoints
+    which service (STT connect, Groq TTFB, Deepgram TTS TTFA) the time is actually going to,
+    instead of guessing from the framework's source.
+    """
+
+    def __init__(self, session_start: float):
+        super().__init__()
+        self._session_start = session_start
+
+    async def on_push_frame(self, data: FramePushed):
+        if not isinstance(data.frame, MetricsFrame):
+            return
+        elapsed = time.monotonic() - self._session_start
+        for m in data.frame.data:
+            logger.info(f"[metrics +{elapsed:.2f}s] {m}")
+
+
 def _pick_initial_problem(topic: str | None, difficulty: str | None) -> dict:
     topic = topic if topic in problems.TOPICS else problems.TOPICS[0]
     difficulty = difficulty if difficulty in problems.DIFFICULTY_ORDER else problems.DIFFICULTY_ORDER[0]
@@ -96,6 +119,7 @@ def _write_session_file(session: dict, transcript: list[dict], scorecard: dict |
 
 async def handle_voice_websocket(websocket: WebSocket) -> None:
     """Build and register one PipelineWorker for a single voice session."""
+    session_start = time.monotonic()
     query_params = websocket.query_params
     session_id = query_params.get("session_id") or str(uuid.uuid4())
 
@@ -245,11 +269,16 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
     worker = PipelineWorker(
         pipeline,
         params=PipelineParams(enable_metrics=True, enable_usage_metrics=True),
+        observers=[_LatencyObserver(session_start)],
     )
 
     @worker.rtvi.event_handler("on_client_ready")
     async def on_client_ready(rtvi):
-        logger.info(f"Voice client ready (session={session_id}, problem={initial_problem['id']})")
+        elapsed = time.monotonic() - session_start
+        logger.info(
+            f"Voice client ready (session={session_id}, problem={initial_problem['id']}, "
+            f"+{elapsed:.2f}s since session start)"
+        )
         context.add_message({"role": "developer", "content": "Greet the candidate and present the problem now."})
         await worker.queue_frames([LLMRunFrame()])
 
