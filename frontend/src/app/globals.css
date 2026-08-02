@@ -6,7 +6,12 @@
   --muted-foreground: #a2a9ad;
   --muted: #dceaf414;
   --card: #000000;
-  --border: #080c0f;
+  /* The literal reference-template value (#080c0f) is nearly identical to --background
+     (#000002) -- imperceptible as a border wherever a section sits on flat black instead of
+     under a glow. Bumped to a translucent white hairline (the standard Linear/Vercel-style dark
+     card border) so it actually reads everywhere it's used: card outlines, section dividers,
+     the code editor's example boxes -- not just where a gradient glow happens to add contrast. */
+  --border: #ffffff1a;
   --primary: #ffffff;
   --primary-foreground: #020105;
   --secondary: #5a58c2;

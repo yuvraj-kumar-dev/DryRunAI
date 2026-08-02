@@ -5,7 +5,6 @@ import {
   Captions,
   ExternalLink,
   FileClock,
-  ListChecks,
   MessageCircleQuestion,
   UsersRound,
 } from "lucide-react";
@@ -41,11 +40,6 @@ const CAPABILITIES = [
     icon: UsersRound,
     title: "Two interviewer personas",
     body: "Pick your pressure: neutral and realistic, or strict and high-bar. Same logic, different bar.",
-  },
-  {
-    icon: ListChecks,
-    title: "Runs your code against tests",
-    body: "Say you're done, and it means it - real test cases, real correctness check, not just vibes.",
   },
   {
     icon: BadgeCheck,
@@ -271,7 +265,7 @@ export default function Home() {
         </div>
 
         <div className="relative mx-auto mt-20 flex max-w-6xl flex-col-reverse items-center justify-between gap-6 text-xs text-muted-foreground lg:mt-30 lg:flex-row">
-          <span>&copy; 2026 DryRunAI &mdash; built solo, in public.</span>
+          <span>&copy; 2026 DryRunAI | Built by Yuvraj Kumar</span>
           <div className="flex flex-wrap items-center justify-center gap-4 lg:gap-8">
             {NAV_LINKS.map((l) => (
               <a key={l.href} href={l.href} className="transition-opacity hover:opacity-80">
