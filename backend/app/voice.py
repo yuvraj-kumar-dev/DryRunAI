@@ -14,7 +14,7 @@ from fastapi import WebSocket
 from loguru import logger
 from pipecat.adapters.schemas.direct_function import tool_options
 from pipecat.audio.vad.silero import SileroVADAnalyzer
-from pipecat.frames.frames import ErrorFrame, LLMRunFrame, MetricsFrame
+from pipecat.frames.frames import ErrorFrame, LLMRunFrame, LLMSetToolChoiceFrame, LLMTextFrame, MetricsFrame
 from pipecat.observers.base_observer import BaseObserver, FramePushed
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineParams, PipelineWorker
@@ -86,6 +86,51 @@ class _LatencyObserver(BaseObserver):
         elapsed = time.monotonic() - self._session_start
         for m in data.frame.data:
             logger.info(f"[metrics +{elapsed:.2f}s] {m}")
+
+
+class _ToolCallLoopBreaker(BaseObserver):
+    """Deterministic circuit breaker for a confirmed real failure mode: Llama 3.3 (via Groq)
+    sometimes keeps calling the same tool repeatedly instead of ever producing a spoken response.
+    One real session logged 13 consecutive get_current_code calls with total silence, across
+    three repeated candidate requests to "read out my code." Prompt wording (INTERVIEWER_BEHAVIOR
+    rule 3) can reduce how often this happens but can't guarantee it won't -- this makes it
+    structurally impossible to exceed MAX_CONSECUTIVE_TOOL_CALLS silent tool calls in a row,
+    independent of what the model "decides" to do.
+
+    note_tool_call() is called from inside a tool handler on every invocation; once the streak
+    hits the threshold, it forces tool_choice="none" via a real pipeline frame (not just mutating
+    the context object -- LLMSetToolChoiceFrame is how Pipecat actually propagates this to the
+    LLM service), so the *next* completion is structurally incapable of calling a tool and must
+    produce text. This observer watches for LLMTextFrame (the frame carrying actual spoken/text
+    output) to detect that a real response landed, and resets the streak + tool_choice back to
+    "auto" at that point so normal tool-calling resumes.
+    """
+
+    MAX_CONSECUTIVE_TOOL_CALLS = 2
+
+    def __init__(self, session: dict):
+        super().__init__()
+        self._session = session
+        self.worker: PipelineWorker | None = None  # set right after PipelineWorker() is built
+
+    async def on_push_frame(self, data: FramePushed):
+        if not isinstance(data.frame, LLMTextFrame):
+            return
+        if self._session.get("consecutive_tool_calls", 0) == 0 or self.worker is None:
+            return
+        self._session["consecutive_tool_calls"] = 0
+        await self.worker.queue_frames([LLMSetToolChoiceFrame(tool_choice="auto")])
+
+
+async def note_tool_call(session: dict, worker: PipelineWorker) -> None:
+    """Call from inside get_current_code/escalate_to_harder_problem on every invocation -- see
+    _ToolCallLoopBreaker for why this exists.
+    """
+    streak = session.get("consecutive_tool_calls", 0) + 1
+    session["consecutive_tool_calls"] = streak
+    if streak >= _ToolCallLoopBreaker.MAX_CONSECUTIVE_TOOL_CALLS:
+        logger.warning(f"{streak} consecutive tool calls with no spoken response -- forcing tool_choice=none")
+        await worker.queue_frames([LLMSetToolChoiceFrame(tool_choice="none")])
 
 
 def update_context_reminder(session: dict) -> None:
@@ -195,6 +240,7 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
             "llm_error_timestamps": [],
             "context": None,
             "context_reminder_message": None,
+            "consecutive_tool_calls": 0,
         }
     ACTIVE_SESSIONS[session_id] = session
 
@@ -246,6 +292,7 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
                 done", "checking approach so far"). Used for the session log, not spoken aloud.
         """
         logger.debug(f"get_current_code called ({reason})")
+        await note_tool_call(session, worker)
         code = session["latest_code"]
         await params.result_callback(
             {"code": code or "(the candidate hasn't written any code yet)"}
@@ -261,6 +308,7 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
                 O(n) solution, explained space complexity correctly"). Used for the session log.
         """
         logger.debug(f"escalate_to_harder_problem called ({reason})")
+        await note_tool_call(session, worker)
         candidate = problems.get_escalation_candidate(session["current_problem"])
         if candidate is None:
             await params.result_callback(
@@ -298,6 +346,7 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
     # clearer than depending on that fallback.
     session["context"] = context
     session["context_reminder_message"] = None
+    session["consecutive_tool_calls"] = 0
     user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
         context,
         user_params=LLMUserAggregatorParams(vad_analyzer=SileroVADAnalyzer()),
@@ -315,11 +364,17 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
         ]
     )
 
+    tool_loop_breaker = _ToolCallLoopBreaker(session)
     worker = PipelineWorker(
         pipeline,
         params=PipelineParams(enable_metrics=True, enable_usage_metrics=True),
-        observers=[_LatencyObserver(session_start)],
+        observers=[_LatencyObserver(session_start), tool_loop_breaker],
     )
+    # Can't construct this observer with the worker reference it needs to queue frames -- the
+    # worker doesn't exist until after observers are already handed to PipelineWorker(). Safe to
+    # backfill immediately after: nothing invokes the observer until the pipeline actually starts
+    # running, well after this point.
+    tool_loop_breaker.worker = worker
 
     @worker.rtvi.event_handler("on_client_ready")
     async def on_client_ready(rtvi):
