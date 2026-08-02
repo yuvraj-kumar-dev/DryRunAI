@@ -70,7 +70,12 @@ export default function InterviewPage() {
         onTransportStateChanged: (state: TransportState) => {
           if (state === "error") setStatus("error");
         },
-        onBotReady: () => setStatus("listening"),
+        // Deliberately no onBotReady -> "listening" transition here. "Ready" just means the
+        // pipeline can accept input -- the interviewer hasn't greeted the candidate yet at that
+        // point (the greeting is still being generated/synthesized), so jumping straight to
+        // "Listening" told the candidate it was their turn to talk before the interviewer had
+        // said anything. Staying on "connecting" until onBotStartedSpeaking fires for the
+        // greeting gives the correct connecting -> speaking (greeting) -> listening sequence.
         onUserStartedSpeaking: () => setStatus("listening"),
         onBotStartedSpeaking: () => setStatus("speaking"),
         onBotStoppedSpeaking: () => setStatus("listening"),
