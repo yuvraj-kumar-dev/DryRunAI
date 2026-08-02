@@ -104,6 +104,7 @@ def submit_code_snapshot(session_id: str, snapshot: CodeSnapshot):
         raise HTTPException(status_code=404, detail="No active session with that id")
     session["latest_code"] = snapshot.code
     session["code_snapshots"].append({"timestamp": time.time(), "code": snapshot.code})
+    voice.update_context_reminder(session)
     return {"status": "ok"}
 
 

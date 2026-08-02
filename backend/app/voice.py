@@ -88,6 +88,43 @@ class _LatencyObserver(BaseObserver):
             logger.info(f"[metrics +{elapsed:.2f}s] {m}")
 
 
+def update_context_reminder(session: dict) -> None:
+    """Create or refresh the single "Reminder" developer message that keeps the LLM grounded on
+    the actual current problem and code (see INTERVIEWER_BEHAVIOR rule 4 in interview.py).
+
+    Pull-based grounding (the get_current_code tool) depends on the model reliably choosing to
+    call it -- real sessions showed it doesn't always, and the interviewer would go on to
+    hallucinate code specifics or drift onto a different problem. This pushes the same
+    information into context automatically whenever it changes (a new code snapshot arrives, or
+    escalate_to_harder_problem fires), so it's there regardless of tool-calling discipline.
+
+    Re-adds the message at the end of context (removing the previous instance) rather than
+    mutating it in place at its original position -- an LLM weighs recent context more heavily
+    than something buried mid-conversation, so keeping this at the tail on every update matters
+    for it to actually work as a countermeasure to context drift in a long session, not just for
+    keeping token count bounded (which mutating in place would already achieve on its own).
+    """
+    context = session.get("context")
+    if context is None:
+        return
+    problem = session["current_problem"]
+    code = session["latest_code"]
+    content = (
+        "Reminder -- current session state, authoritative (see rule 4):\n"
+        f"Problem: {problem['title']} ({problem['difficulty']}, {problem['topic']})\n"
+        f"Candidate's current code:\n{code or '(nothing written yet)'}"
+    )
+    old = session.get("context_reminder_message")
+    if old is not None:
+        try:
+            context.messages.remove(old)
+        except ValueError:
+            pass
+    reminder = {"role": "developer", "content": content}
+    context.add_message(reminder)
+    session["context_reminder_message"] = reminder
+
+
 def _pick_initial_problem(topic: str | None, difficulty: str | None) -> dict:
     topic = topic if topic in problems.TOPICS else problems.TOPICS[0]
     difficulty = difficulty if difficulty in problems.DIFFICULTY_ORDER else problems.DIFFICULTY_ORDER[0]
@@ -156,6 +193,8 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
             "latest_code": "",
             "code_snapshots": [],
             "llm_error_timestamps": [],
+            "context": None,
+            "context_reminder_message": None,
         }
     ACTIVE_SESSIONS[session_id] = session
 
@@ -230,6 +269,7 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
             return
         session["current_problem"] = candidate
         session["escalated"] = True
+        update_context_reminder(session)
         await params.result_callback(
             {
                 "escalated": True,
@@ -249,6 +289,15 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
     )
 
     context = LLMContext(tools=[get_current_code, escalate_to_harder_problem])
+    # Referenced by update_context_reminder() -- both here (escalate_to_harder_problem) and from
+    # main.py's code-snapshot endpoint, which has no other way to reach this connection's context.
+    # Reset context_reminder_message too: on a reconnect, `session` was shallow-copied from a
+    # previous connection's state, so any old reminder message object belongs to that connection's
+    # (now-discarded) context, not this one -- update_context_reminder() would fail to find it
+    # via .remove() (harmless, caught) and just re-create it correctly, but starting from None is
+    # clearer than depending on that fallback.
+    session["context"] = context
+    session["context_reminder_message"] = None
     user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
         context,
         user_params=LLMUserAggregatorParams(vad_analyzer=SileroVADAnalyzer()),
