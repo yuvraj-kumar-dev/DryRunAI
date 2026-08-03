@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
 from pydantic import BaseModel
 
 from app import config, interview, problems, voice
@@ -35,9 +36,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="DryRunAI backend", lifespan=lifespan)
 
+# Single source of truth for both CORS (HTTP fetch/XHR) and the WebSocket route below --
+# CORSMiddleware does NOT cover WebSocket upgrade handshakes (browsers don't enforce the same
+# origin policy on them the way they do for fetch/XHR), so /ws/voice needs its own explicit check
+# against the same allowed origin rather than relying on this middleware to protect it too.
+ALLOWED_ORIGINS = ["http://localhost:3000"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -110,5 +117,15 @@ def submit_code_snapshot(session_id: str, snapshot: CodeSnapshot):
 
 @app.websocket("/ws/voice")
 async def voice_websocket(websocket: WebSocket):
+    # CORSMiddleware above does not protect WebSocket upgrade handshakes -- browsers don't apply
+    # the same-origin policy to them the way they do fetch/XHR, so without this check any page
+    # (opened in another tab) could open a WebSocket straight to this route from its own
+    # JavaScript. Reject before accept() -- the standard pattern for a pre-accept handshake
+    # rejection, not something that requires accepting the connection first.
+    origin = websocket.headers.get("origin")
+    if origin not in ALLOWED_ORIGINS:
+        logger.warning(f"Rejected /ws/voice connection from disallowed origin: {origin!r}")
+        await websocket.close(code=1008)
+        return
     await websocket.accept()
     await voice.handle_voice_websocket(websocket)
