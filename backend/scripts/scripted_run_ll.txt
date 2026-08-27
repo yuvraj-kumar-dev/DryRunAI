@@ -1,0 +1,5 @@
+Can the list be empty, and can I rewire the existing nodes in place?
+I would use three pointers. A prev starting at null, a curr at head, and a next. Each step I save curr dot next, point curr dot next at prev, then advance prev to curr and curr to next. At the end prev is the new head. O of n time and O of one space.
+/code def solve(head):\n    prev = None\n    curr = head\n    while curr:\n        nxt = curr.next\n        curr.next = prev\n        prev = curr\n        curr = nxt\n    return prev
+That is my implementation, I am done with this one.
+Yes, an empty list returns None because prev never moves off null, and a single node returns itself.

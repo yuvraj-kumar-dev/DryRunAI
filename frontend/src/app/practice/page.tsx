@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Gauge, Layers, Loader2, UsersRound } from "lucide-react";
+import { ArrowRight, Gauge, Layers, ListOrdered, Loader2, UsersRound } from "lucide-react";
 import { AnnouncementPill, GlowBackdrop, GrainOverlay } from "@/components/backdrop";
 import { Button } from "@/components/button";
 import { Logo } from "@/components/logo";
@@ -13,11 +14,23 @@ type SessionOptions = {
   topics: string[];
   difficulties: string[];
   personas: string[];
+  plan_sizes: number[];
+  default_plan_size: number;
 };
 
 const PERSONA_LABELS: Record<string, string> = {
   neutral: "Neutral & realistic",
   strict: "Strict & high-bar",
+};
+
+// How many problems the round runs for. A real 45-minute round fits one or two, and the number
+// is what tells the interviewer when to move on and when to wrap up and score you -- an
+// open-ended interview never reaches a scorecard at all.
+const LENGTH_LABELS: Record<string, string> = {
+  "1": "1 problem",
+  "2": "2 problems",
+  "3": "3 problems",
+  "4": "4 problems",
 };
 
 export default function PracticePage() {
@@ -26,6 +39,7 @@ export default function PracticePage() {
   const [topic, setTopic] = useState("");
   const [difficulty, setDifficulty] = useState("");
   const [persona, setPersona] = useState("");
+  const [planSize, setPlanSize] = useState("");
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,6 +51,7 @@ export default function PracticePage() {
         setTopic(data.topics[0]);
         setDifficulty(data.difficulties[0]);
         setPersona(data.personas[0]);
+        setPlanSize(String(data.default_plan_size));
       })
       .catch(() => setError("Couldn't reach the backend. Is it running on :8000?"));
   }, []);
@@ -48,13 +63,18 @@ export default function PracticePage() {
       const res = await fetch(`${BACKEND_URL}/api/sessions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, difficulty, persona }),
+        body: JSON.stringify({ topic, difficulty, persona, plan_size: Number(planSize) }),
       });
       if (!res.ok) throw new Error(`Backend returned ${res.status}`);
       const data = await res.json();
       sessionStorage.setItem(
         "dryrunai_session",
-        JSON.stringify({ sessionId: data.session_id, problem: data.problem, persona })
+        JSON.stringify({
+          sessionId: data.session_id,
+          problem: data.problem,
+          persona,
+          planSize: data.plan_size,
+        })
       );
       router.push("/interview");
     } catch (err) {
@@ -68,12 +88,12 @@ export default function PracticePage() {
       <GlowBackdrop />
       <GrainOverlay />
 
-      <a
+      <Link
         href="/"
         className="relative z-10 mb-10 self-start transition-opacity hover:opacity-80 sm:absolute sm:left-10 sm:top-8 sm:mb-0"
       >
         <Logo className="text-sm" />
-      </a>
+      </Link>
 
       <div className="relative flex flex-col items-center gap-3 text-center">
         <AnnouncementPill badge="v0">Three quick choices, then you&apos;re in</AnnouncementPill>
@@ -109,6 +129,14 @@ export default function PracticePage() {
             value={difficulty}
             options={options.difficulties}
             onChange={setDifficulty}
+          />
+          <Picker
+            icon={ListOrdered}
+            label="Length"
+            value={planSize}
+            options={options.plan_sizes.map(String)}
+            labels={LENGTH_LABELS}
+            onChange={setPlanSize}
           />
           <Picker
             icon={UsersRound}
