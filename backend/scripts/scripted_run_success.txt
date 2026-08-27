@@ -1,0 +1,11 @@
+Just to confirm, can the array be empty, and can I use extra space?
+I would scan the array once and keep what I have seen in a hash set. If I hit something already in the set I can answer immediately. That is O of n time and O of n space.
+/code def solve(nums):\n    seen = set()\n    for n in nums:\n        if n in seen:\n            return True\n        seen.add(n)\n    return False
+That is my solution. Linear time because each lookup is O of one, and linear space for the set in the worst case where everything is distinct.
+Yes, a single element array returns False correctly, and I return early on the first repeat.
+I am ready for the next one.
+Let me read it. I would use two pointers, a slow one for the write position and a fast one scanning forward, swapping non zero values into the slow position.
+/code def solve(nums):\n    slow = 0\n    for fast in range(len(nums)):\n        if nums[fast] != 0:\n            nums[slow], nums[fast] = nums[fast], nums[slow]\n            slow += 1\n    return nums
+That is done. It is O of n time and O of one extra space, and the swap keeps the relative order of the non zero values because slow never overtakes fast.
+Yes I am confident in that, I think that covers it.
+Nothing further from me, thank you.

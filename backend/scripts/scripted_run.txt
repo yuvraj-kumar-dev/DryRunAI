@@ -1,0 +1,10 @@
+Can I assume the array is non-empty and only has integers?
+My approach is to use a hash map to count how many times each number appears, then return the number whose count is highest. That is O of n time and O of n space.
+/code def solve(nums):\n    counts = {}\n    for n in nums:\n        counts[n] = counts.get(n, 0) + 1\n    return max(counts, key=counts.get)
+That is my solution, I think it is done.
+It handles a single element array fine, and for an empty array it would raise, so I would guard that at the top.
+Yes I am happy with that, what is next?
+Okay, let me think about this new one for a second.
+I would use two pointers moving from both ends toward the middle.
+Actually I am stuck on this one, I cannot see the trick.
+Okay I give up on this one, can we wrap up?

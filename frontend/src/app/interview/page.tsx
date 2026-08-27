@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { PipecatClient, TransportState } from "@pipecat-ai/client-js";
 import { WebSocketTransport, ProtobufFrameSerializer } from "@pipecat-ai/websocket-transport";
@@ -23,30 +23,84 @@ type Problem = {
 
 type VoiceStatus = "connecting" | "listening" | "thinking" | "speaking" | "error" | "ended";
 
+// Messages the backend pushes down the voice WebSocket (voice.py's push_to_client). Without this
+// channel the displayed problem could never change: the server would move the interview on while
+// the browser went on rendering whatever it was handed at session creation.
+const SESSION_KEY = "dryrunai_session";
+
+type StoredSession = { sessionId: string; problem: Problem; planSize?: number } | null;
+
+// useSyncExternalStore calls getSnapshot on every render and re-renders if the result changes
+// identity, so the parse has to be cached against the raw string -- parsing fresh each call
+// would return a new object every time and loop forever.
+let cachedRaw: string | null = null;
+let cachedSession: StoredSession = null;
+
+function readStoredSession(): StoredSession {
+  const raw = sessionStorage.getItem(SESSION_KEY);
+  if (raw !== cachedRaw) {
+    cachedRaw = raw;
+    try {
+      cachedSession = raw ? (JSON.parse(raw) as StoredSession) : null;
+    } catch {
+      cachedSession = null;
+    }
+  }
+  return cachedSession;
+}
+
+// The stored session is written once by /practice before this page ever mounts and never changes
+// while the interview is running, so there is genuinely nothing to subscribe to.
+function subscribeToStoredSession() {
+  return () => {};
+}
+
+type ServerMessage =
+  | { type: "problem_changed"; problem: Problem; index: number; total: number }
+  | { type: "interview_ended"; session_id: string; reason: string | null; scorecard: unknown };
+
 export default function InterviewPage() {
   const router = useRouter();
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [problem, setProblem] = useState<Problem | null>(null);
+  // The session picked on the previous screen. sessionStorage is an external store, so it's read
+  // with useSyncExternalStore rather than loaded into state from an effect: the server render
+  // gets a definite null (no hydration mismatch) while the client gets the real value on its
+  // first render, with no cascading re-render on mount.
+  const stored = useSyncExternalStore(subscribeToStoredSession, readStoredSession, () => null);
+
+  // The problem and plan size start from what /practice handed us, then the backend can replace
+  // them mid-interview (problem_changed). Layering an override over the stored value keeps that
+  // possible without copying the initial value into state on mount.
+  const [problemOverride, setProblemOverride] = useState<Problem | null>(null);
+  const [planSizeOverride, setPlanSizeOverride] = useState<number | null>(null);
+  const [problemNumber, setProblemNumber] = useState(1);
   const [problemCollapsed, setProblemCollapsed] = useState(false);
   const [code, setCode] = useState("");
   const [status, setStatus] = useState<VoiceStatus>("connecting");
+  const [ending, setEnding] = useState(false);
+
+  const sessionId = stored?.sessionId ?? null;
+  const problem = problemOverride ?? stored?.problem ?? null;
+  const planSize = planSizeOverride ?? stored?.planSize ?? 1;
 
   const clientRef = useRef<PipecatClient | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastSentCodeRef = useRef("");
   const codeRef = useRef("");
+  // Set the moment the interview is known to be over, so the snapshot timer and the disconnect
+  // handler can tell "finished" apart from "the socket dropped".
+  const endedRef = useRef(false);
 
-  // Load the session picked on the previous screen; bounce back if there isn't one.
+  // Nothing to interview about without a session -- bounce back to the picker.
   useEffect(() => {
-    const raw = sessionStorage.getItem("dryrunai_session");
-    if (!raw) {
-      router.replace("/practice");
-      return;
-    }
-    const parsed = JSON.parse(raw);
-    setSessionId(parsed.sessionId);
-    setProblem(parsed.problem);
-  }, [router]);
+    if (!stored) router.replace("/practice");
+  }, [stored, router]);
+
+  const goToReport = useCallback(() => {
+    if (endedRef.current || !sessionId) return;
+    endedRef.current = true;
+    setStatus("ended");
+    router.replace(`/report?session=${sessionId}`);
+  }, [router, sessionId]);
 
   // Connect voice once we know which session to join.
   //
@@ -79,7 +133,29 @@ export default function InterviewPage() {
         onUserStartedSpeaking: () => setStatus("listening"),
         onBotStartedSpeaking: () => setStatus("speaking"),
         onBotStoppedSpeaking: () => setStatus("listening"),
-        onDisconnected: () => setStatus("ended"),
+        onServerMessage: (data: ServerMessage) => {
+          if (!data || typeof data !== "object") return;
+          if (data.type === "problem_changed") {
+            // The interviewer is about to introduce this out loud, so swap the screen now --
+            // the two have to agree, which is the entire reason this message exists.
+            setProblemOverride(data.problem);
+            setProblemNumber(data.index);
+            setPlanSizeOverride(data.total);
+            setProblemCollapsed(false);
+            // The new problem gets a blank editor. The previous problem's code is already
+            // archived server-side (session_state.advance_to_next_problem), and the server has
+            // reset its own idea of "current code" in lockstep, so clearing here keeps the two
+            // in agreement rather than carrying the last solution into the new question.
+            setCode("");
+            codeRef.current = "";
+            lastSentCodeRef.current = "";
+          } else if (data.type === "interview_ended") {
+            goToReport();
+          }
+        },
+        // A disconnect after the interview has properly ended is expected -- the backend closes
+        // the pipeline once the scorecard is away. Anything else is a genuine drop.
+        onDisconnected: () => setStatus((s) => (endedRef.current ? s : "ended")),
         onTrackStarted: (track: MediaStreamTrack, participant?: { local?: boolean }) => {
           if (!participant?.local && track.kind === "audio" && audioRef.current) {
             audioRef.current.srcObject = new MediaStream([track]);
@@ -100,12 +176,13 @@ export default function InterviewPage() {
       cancelled = true;
       client.disconnect();
     };
-  }, [sessionId]);
+  }, [sessionId, goToReport]);
 
   // Periodic (not per-keystroke) code snapshots.
   useEffect(() => {
     if (!sessionId) return;
     const interval = setInterval(() => {
+      if (endedRef.current) return;
       const current = codeRef.current;
       if (current === lastSentCodeRef.current) return;
       lastSentCodeRef.current = current;
@@ -119,6 +196,25 @@ export default function InterviewPage() {
     }, SNAPSHOT_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [sessionId]);
+
+  async function endInterview() {
+    if (!sessionId || ending || endedRef.current) return;
+    if (!confirm("End the interview now and generate your scorecard?")) return;
+    setEnding(true);
+    try {
+      // Push the final state of the editor first -- otherwise whatever was typed since the last
+      // 8s snapshot never reaches the scorecard.
+      await fetch(`${BACKEND_URL}/api/sessions/${sessionId}/code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: codeRef.current }),
+      }).catch(() => {});
+      await fetch(`${BACKEND_URL}/api/sessions/${sessionId}/end`, { method: "POST" });
+    } finally {
+      clientRef.current?.disconnect();
+      goToReport();
+    }
+  }
 
   function onCodeChange(value: string) {
     setCode(value);
@@ -141,6 +237,11 @@ export default function InterviewPage() {
             onClick={() => setProblemCollapsed((v) => !v)}
             className="flex min-w-0 items-center gap-2 text-left"
           >
+            {planSize > 1 && (
+              <span className="shrink-0 rounded-full border border-border px-2 py-0.5 font-[family-name:var(--font-display-mono)] text-[0.6875rem] uppercase tracking-wider text-muted-foreground">
+                {problemNumber}/{planSize}
+              </span>
+            )}
             <span className="truncate font-medium">{problem.title}</span>
             <span className="hidden shrink-0 text-muted-foreground sm:inline">
               ({problem.difficulty}, {problem.topic})
@@ -150,7 +251,17 @@ export default function InterviewPage() {
             />
           </button>
         </div>
-        <StatusPill status={status} />
+        <div className="flex shrink-0 items-center gap-3">
+          <StatusPill status={status} />
+          <button
+            onClick={endInterview}
+            disabled={ending || status === "ended"}
+            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-destructive/40 bg-destructive/10 px-3 font-[family-name:var(--font-display-mono)] text-xs uppercase tracking-wider text-destructive transition-colors hover:bg-destructive/20 disabled:pointer-events-none disabled:opacity-50"
+          >
+            {ending ? <Loader2 className="size-3.5 animate-spin" /> : <PhoneOff className="size-3.5" />}
+            <span className="hidden sm:inline">{ending ? "Scoring" : "End"}</span>
+          </button>
+        </div>
       </header>
 
       {!problemCollapsed && (

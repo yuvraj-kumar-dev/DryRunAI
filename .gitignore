@@ -1,6 +1,7 @@
 docs/
 PROJECT_TRACKER.md
 CLAUDE.md
+TODO.md
 
 # secrets
 .env
